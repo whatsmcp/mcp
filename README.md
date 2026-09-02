@@ -1,5 +1,7 @@
 # WhatsMCP — WhatsApp for AI agents
 
+![WhatsMCP — developer infrastructure for WhatsApp AI agents](assets/og.jpg)
+
 **A hosted [Model Context Protocol](https://modelcontextprotocol.io) server that gives your
 agent a real WhatsApp account.** Link your number once, point any MCP client at one HTTPS
 endpoint, and your agent can read chats, reply, look people up in the address book, manage
@@ -28,7 +30,6 @@ Streamable HTTP**. Your agent talks to `https://app.whatsmcp.com/mcp` with a bea
 - [Webhooks](#webhooks)
 - [Sending](#sending)
 - [Groups and channels](#groups-and-channels)
-- [Plans and limits](#plans-and-limits)
 - [Refusals and error handling](#refusals-and-error-handling)
 - [Security model](#security-model)
 - [Links](#links)
@@ -67,10 +68,14 @@ Sign-up is self-serve and free — no card, no sales call.
 | **Product site** | <https://whatsmcp.com> |
 
 You give a name and an email address. We send a confirmation link; opening it is where you
-choose a password. Confirming creates your **workspace** (tenant) on the free plan, and the
-console opens on it.
+choose a password. Confirming creates your **workspace** (tenant) on the free plan and drops
+you into a short setup wizard that walks the three steps that turn a bare account into a
+working integration: **link a number**, **mint a key**, and — optionally — **point a
+webhook** at your endpoint. It is derived from what you have actually done rather than a
+checklist you tick, so it disappears once you are set up and comes back if you unlink
+everything.
 
-Everything after that lives in the console:
+Everything lives in the console:
 
 | Console page | What it is for |
 |---|---|
@@ -92,6 +97,13 @@ stays the primary device and can stay in your pocket afterwards.
 
 **From the console:** open [Pair device](https://app.whatsmcp.com/console/pair), then on the
 handset go to **WhatsApp → Settings → Linked devices → Link a device** and scan the code.
+
+![Pairing a device: the console shows a QR code and a four-stage progress indicator — code, scanned, syncing, ready](assets/pair-device.png)
+
+The code rotates roughly every 20 seconds and the page refreshes itself, so a stale QR never
+sits there failing to scan. The stepper underneath tracks the whole run: the handset accepts
+the code (**scanned**), the device logs in and pulls its history (**syncing**), and only then
+is the number **ready** to use.
 
 **From the agent**, with the `wa_pair_account` tool:
 
@@ -160,7 +172,26 @@ Add the server to the `mcpServers` block of your configuration file:
 }
 ```
 
-### Codex, and every other client
+### Codex
+
+Remote servers are configured in `~/.codex/config.toml` — `codex mcp add` covers stdio
+servers only. Keep the key in the environment rather than in the file:
+
+```toml
+[mcp_servers.wamcp]
+url = "https://app.whatsmcp.com/mcp"
+bearer_token_env_var = "WHATSMCP_API_KEY"
+```
+
+```sh
+export WHATSMCP_API_KEY=wamcp_live_…
+```
+
+Codex sends that as `Authorization: Bearer …`. If you would rather set the header yourself
+— or need to add others — use `http_headers` for static values and `env_http_headers` to
+pull them from the environment instead.
+
+### Every other client
 
 Clients differ in where they keep configuration, but they all need the same two values
 above: the endpoint as a **remote HTTP** (not stdio) server, and the key as an
@@ -461,25 +492,6 @@ and the refusal says so verbatim rather than failing generically.
 Group management (`wa_create_group`, add/remove, promote/demote, delete) follows WhatsApp's
 own rules: mutations that need admin fail without it. `wa_delete_group` removes every other
 member and then leaves, because WhatsApp has no true delete.
-
----
-
-## Plans and limits
-
-Every plan — free included — grants the whole base product: accounts, reading, sending and
-pairing. **Webhooks are the paid gate.**
-
-| | Free | Starter | Pro | Premium |
-|---|---|---|---|---|
-| Linked numbers | 1 | 3 | 10 | Unlimited |
-| Messages / hour | 20 | 100 | 500 | 2 000 |
-| Messages / 24 h | 100 | 1 000 | 5 000 | 20 000 |
-| History retained | 7 days | 30 days | 90 days | Full |
-| Webhooks | — | ✅ | ✅ | ✅ |
-
-Current usage against these caps is on [Console → Usage](https://app.whatsmcp.com/console/usage);
-pricing and upgrades are on the console's Plans page. A tool your plan does not include is
-simply absent from `tools/list`.
 
 ---
 
