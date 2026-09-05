@@ -549,6 +549,9 @@ not retry a dead credential forever), and the endpoint is rate-limited per sourc
 | Help (your workspace's own connection details) | <https://app.whatsmcp.com/console/help> |
 | MCP endpoint | `https://app.whatsmcp.com/mcp` |
 | Model Context Protocol | <https://modelcontextprotocol.io> |
+| Privacy Policy | <https://whatsmcp.com/privacy> |
+| Terms of Service | <https://whatsmcp.com/terms> |
+| Contact / support | <https://whatsmcp.com/contact> |
 
 Questions, a number that needs group messaging switched on, or a plan that does not fit —
-open an issue here or write to us from the console.
+open an issue here, use the contact link above, or write to us from the console.
