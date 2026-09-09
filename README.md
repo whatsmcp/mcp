@@ -1,14 +1,43 @@
-# WhatsMCP — WhatsApp for AI agents
+<p align="center">
+  <img src="assets/og.jpg" alt="WhatsMCP — developer infrastructure for WhatsApp AI agents" width="880">
+</p>
 
-![WhatsMCP — developer infrastructure for WhatsApp AI agents](assets/og.jpg)
+<h1 align="center">WhatsMCP</h1>
 
-**A hosted [Model Context Protocol](https://modelcontextprotocol.io) server that gives your
-agent a real WhatsApp account.** Link your number once, point any MCP client at one HTTPS
-endpoint, and your agent can read chats, reply, look people up in the address book, manage
-groups, fetch attachments and receive inbound messages by webhook.
+<p align="center">
+  <strong>Give your agent a real WhatsApp account.</strong><br>
+  A hosted <a href="https://modelcontextprotocol.io">Model Context Protocol</a> server.
+  Link a number once, point any MCP client at one HTTPS endpoint — no SDK,
+  nothing to install, nothing to run locally.
+</p>
+
+<p align="center">
+  <a href="https://whatsmcp.com"><img alt="Website" src="https://img.shields.io/badge/website-whatsmcp.com-22C55E?style=flat-square"></a>
+  <a href="https://whatsmcp.com/docs/mcp"><img alt="Documentation" src="https://img.shields.io/badge/docs-%2Fdocs%2Fmcp-0A1120?style=flat-square"></a>
+  <a href="https://modelcontextprotocol.io"><img alt="MCP specification" src="https://img.shields.io/badge/MCP-2026--07--28-6E56CF?style=flat-square"></a>
+  <img alt="Tools" src="https://img.shields.io/badge/tools-42-0A1120?style=flat-square">
+  <a href="#connect-your-client"><img alt="Authentication" src="https://img.shields.io/badge/auth-OAuth%202.1%20%C2%B7%20API%20key-F5A623?style=flat-square"></a>
+  <img alt="Status" src="https://img.shields.io/badge/status-live-22C55E?style=flat-square">
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#connect-your-client">Connect your client</a> ·
+  <a href="#tools">Tools</a> ·
+  <a href="#reading-incoming-messages">Polling</a> ·
+  <a href="#webhooks">Webhooks</a> ·
+  <a href="#security-model">Security</a>
+</p>
+
+---
+
+Your agent can read chats, reply, look people up in the address book, react to and edit
+messages, manage groups, block and unblock contacts, fetch attachments and receive inbound
+messages by webhook.
 
 There is nothing to install and nothing to run locally — it is a **remote MCP server over
-Streamable HTTP**. Your agent talks to `https://app.whatsmcp.com/mcp` with a bearer token.
+Streamable HTTP**. Your client talks to `https://app.whatsmcp.com/mcp` and signs in with
+OAuth, or presents an API key.
 
 > **Not the WhatsApp Business API.** No templates, no 24-hour session window, no message
 > approval, no per-conversation billing. You link a normal WhatsApp account by scanning a
@@ -30,8 +59,10 @@ Streamable HTTP**. Your agent talks to `https://app.whatsmcp.com/mcp` with a bea
 - [Webhooks](#webhooks)
 - [Sending](#sending)
 - [Groups and channels](#groups-and-channels)
+- [Plans and limits](#plans-and-limits)
 - [Refusals and error handling](#refusals-and-error-handling)
 - [Security model](#security-model)
+- [Status and licence](#status-and-licence)
 - [Links](#links)
 
 ---
@@ -41,19 +72,22 @@ Streamable HTTP**. Your agent talks to `https://app.whatsmcp.com/mcp` with a bea
 ```
 1. Create a workspace     →  https://app.whatsmcp.com/console/register
 2. Link a WhatsApp number →  Console → Pair device (scan the QR with your phone)
-3. Mint an API key        →  Console → API keys (it is shown once — copy it)
-4. Point your client at   →  https://app.whatsmcp.com/mcp
-                             Authorization: Bearer <your key>
+3. Give your client       →  https://app.whatsmcp.com/mcp
+                             …and sign in when it asks. No key to paste.
 ```
 
-For Claude Code that last step is one command:
+For Claude Code that is two commands:
 
 ```sh
-claude mcp add --transport http wamcp https://app.whatsmcp.com/mcp \
-  --header "Authorization: Bearer YOUR_KEY"
+claude mcp add --transport http wamcp https://app.whatsmcp.com/mcp
+claude mcp login wamcp
 ```
 
 Then ask your agent: *“list my WhatsApp accounts and show me the last few messages.”*
+
+Clients that cannot sign in — `curl`, CI, anything without OAuth — take a key in a header
+instead: [mint one](#create-an-api-key), then see [Connect your
+client](#connect-your-client).
 
 ---
 
@@ -82,6 +116,7 @@ Everything lives in the console:
 | [Fleet](https://app.whatsmcp.com/console/fleet) | Every linked number and whether it is connected |
 | [Pair device](https://app.whatsmcp.com/console/pair) | Link a new WhatsApp number by QR |
 | [API keys](https://app.whatsmcp.com/console/keys) | Mint and revoke keys; copy-paste connection examples |
+| [Connections](https://app.whatsmcp.com/console/connections) | Clients you signed in with OAuth, and a revoke button per client |
 | [Webhooks](https://app.whatsmcp.com/console/webhooks) | Inbound delivery endpoint and its recent attempts |
 | [Usage](https://app.whatsmcp.com/console/usage) | Messages sent against your plan's caps |
 | [Help](https://app.whatsmcp.com/console/help) | The connection details for *your* workspace, and which tools your plan includes |
@@ -125,6 +160,10 @@ Once `state` is `paired` the number appears in `wa_list_accounts` and is ready t
 
 ## Create an API key
 
+**Optional.** A client that can sign in with OAuth never needs one — skip to [Connect your
+client](#connect-your-client). Keys are for `curl`, for CI, and for clients that cannot do
+OAuth.
+
 [Console → API keys](https://app.whatsmcp.com/console/keys) → **Create key**.
 
 Keys look like `wamcp_live_XXXXXXXXXXXX_…` and are **shown exactly once** — we store only a
@@ -138,25 +177,64 @@ and no way for one workspace to reach another's messages.
 
 ## Connect your client
 
-Any MCP client that speaks **Streamable HTTP** and can set a header will work. Two values:
+Any MCP client that speaks **Streamable HTTP** will work. There is one endpoint:
 
 | | |
 |---|---|
 | **Endpoint** | `https://app.whatsmcp.com/mcp` |
-| **Header** | `Authorization: Bearer <your key>` |
+
+There are two ways to prove who you are against it.
+
+**OAuth — recommended, and what every client below does by default.** The client reads the
+server's own metadata, registers itself, and sends you to the console to approve it. Nothing
+is pasted anywhere: no key is created, none is stored in a config file, and you can revoke
+one client without touching the others from
+[Console → Connections](https://app.whatsmcp.com/console/connections).
+
+**An API key** — `Authorization: Bearer <your key>`, or `x-api-key: <your key>` for clients
+that reserve `Authorization` for a token they manage themselves. Use it for `curl`, for CI,
+and for clients that cannot do OAuth. See [Create an API key](#create-an-api-key).
 
 ### Claude Code
+
+```sh
+claude mcp add --transport http wamcp https://app.whatsmcp.com/mcp
+```
+
+Then run `/mcp` inside Claude Code, pick **Authenticate**, and sign in in the browser window
+it opens. `claude mcp login wamcp` does the same thing from the shell. `claude mcp list`
+should then show `wamcp` connected.
+
+With a key instead, and no sign-in step:
 
 ```sh
 claude mcp add --transport http wamcp https://app.whatsmcp.com/mcp \
   --header "Authorization: Bearer YOUR_KEY"
 ```
 
-`claude mcp list` should then show `wamcp` connected.
+### Claude Desktop and claude.ai
 
-### Claude Desktop
+Open **Settings → Connectors → Add custom connector**, put the endpoint in the URL field,
+leave **Authentication** on **OAuth**, and sign in when Claude asks. The dialog discovers the
+flow on its own.
 
-Add the server to the `mcpServers` block of your configuration file:
+> **The authentication type is fixed when the connector is added.** A connector created with
+> a header or an API key never switches itself to OAuth later — delete it and add it again.
+
+To use a key here instead, set **Authentication** to **None** and add one entry under
+**Additional request headers**:
+
+| | |
+|---|---|
+| **Header name** | `x-api-key` |
+| **Value** | `YOUR_KEY` |
+
+Paste the key on its own — no `Bearer ` in front of it. `Authorization` is not offered in
+that dialog: it is kept for the OAuth token Claude manages itself. Header values are stored
+once and never shown again, so if the connector will not connect, replace the header rather
+than trying to read it back — a wrong key and a missing one look identical from the outside.
+
+If you edit the configuration file instead of using the dialog, it has no such restriction:
 
 ```json
 {
@@ -172,10 +250,31 @@ Add the server to the `mcpServers` block of your configuration file:
 }
 ```
 
+### ChatGPT
+
+Turn on **Developer mode** under **Settings → Security and login** (availability depends on
+your ChatGPT plan), then go to **Plugins**, press **+**, and give it the endpoint.
+
+**OAuth is the only way in here.** ChatGPT cannot present a custom API key to an MCP server,
+so the key path in this page does not apply to it — there is no header field to put one in.
+The sign-in flow is the whole configuration.
+
 ### Codex
 
-Remote servers are configured in `~/.codex/config.toml` — `codex mcp add` covers stdio
-servers only. Keep the key in the environment rather than in the file:
+```sh
+codex mcp add wamcp --url https://app.whatsmcp.com/mcp
+codex mcp login wamcp
+```
+
+Or write the same server into `~/.codex/config.toml` directly. `auth` defaults to `"oauth"`:
+
+```toml
+[mcp_servers.wamcp]
+url = "https://app.whatsmcp.com/mcp"
+auth = "oauth"
+```
+
+To use a key instead, keep it in the environment rather than in the file:
 
 ```toml
 [mcp_servers.wamcp]
@@ -187,16 +286,59 @@ bearer_token_env_var = "WHATSMCP_API_KEY"
 export WHATSMCP_API_KEY=wamcp_live_…
 ```
 
-Codex sends that as `Authorization: Bearer …`. If you would rather set the header yourself
-— or need to add others — use `http_headers` for static values and `env_http_headers` to
-pull them from the environment instead.
+Codex sends that as `Authorization: Bearer …`. If you would rather set headers yourself, use
+`http_headers` for static values and `env_http_headers` to pull them from the environment.
 
 ### Every other client
 
-Clients differ in where they keep configuration, but they all need the same two values
-above: the endpoint as a **remote HTTP** (not stdio) server, and the key as an
-`Authorization` header. If a client only offers "a command to run", it does not support
-remote servers — there is no local process to point it at.
+Clients differ in where they keep configuration, but they all need the same thing: the
+endpoint added as a **remote HTTP** (not stdio) server. A client that supports OAuth will
+find the sign-in flow by itself once it has the URL. One that does not needs the key in
+`Authorization`, or in `x-api-key` where it will not let you set `Authorization`.
+
+If a client only offers "a command to run", it does not support remote servers — there is no
+local process to point it at.
+
+### How the OAuth flow works
+
+Worth reading only if you are integrating a client of your own, or wondering what your agent
+just agreed to. Everything here is standard OAuth 2.1 — no custom handshake.
+
+The server publishes two metadata documents, which is how a client bootstraps with nothing
+but the endpoint URL:
+
+| | |
+|---|---|
+| [`/.well-known/oauth-protected-resource`](https://app.whatsmcp.com/.well-known/oauth-protected-resource) | RFC 9728 — names the resource and points at its authorization server |
+| [`/.well-known/oauth-authorization-server`](https://app.whatsmcp.com/.well-known/oauth-authorization-server) | RFC 8414 — the endpoints, grants and scopes below |
+
+A client registers itself either by **Dynamic Client Registration** (RFC 7591, at
+`/oauth/register`) or by publishing a **Client ID Metadata Document** whose URL is its client
+id — both are supported, and the vendors above use one or the other. Then it is an ordinary
+authorization-code flow with **PKCE** (`S256` only): you land on the consent page at
+`/console/oauth/authorize`, approve, and the code is exchanged at `/oauth/token`.
+Authorization codes are single-use, refresh tokens rotate on every use, and a retired refresh
+token being replayed revokes the whole grant rather than issuing another. Tokens are bound to
+this resource (RFC 8707) and revocable at `/oauth/revoke` (RFC 7009).
+
+Seven scopes are advertised and recorded on each grant:
+
+| Scope | Covers |
+|---|---|
+| `wa:accounts` | Listing your numbers, plan and service version |
+| `wa:read` | Messages, chats, contacts, profiles, groups, calls, media |
+| `wa:send` | Sending, reacting, editing, group and blocklist changes |
+| `wa:pair` | Linking and unlinking numbers |
+| `wa:webhooks` | Registering and managing inbound delivery |
+| `wa:egress:socks5`, `wa:egress:wireguard` | Per-account egress configuration |
+
+> **Scope is recorded, not enforced at the tool layer.** Which tools a grant can actually
+> reach is decided by your **plan**, exactly as it is for an API key. Treat the scope list as
+> a description of what the connection is for, not as a sandbox.
+
+Grants are listed and revocable at
+[Console → Connections](https://app.whatsmcp.com/console/connections). Revoking one there
+disconnects that client and nothing else.
 
 ### Check it by hand
 
@@ -214,21 +356,23 @@ Two things catch people out when driving the endpoint directly:
 - **A tool result is text that is itself JSON**, so it is parsed twice.
 
 The endpoint is **stateless** (MCP 2026-07-28 removed protocol sessions), so it needs no
-sticky routing and it is safe to call from anywhere. It also publishes RFC 9728
-protected-resource metadata at
-[`/.well-known/oauth-protected-resource`](https://app.whatsmcp.com/.well-known/oauth-protected-resource).
+sticky routing and it is safe to call from anywhere. Called without a credential it answers
+`401` with a `WWW-Authenticate` header pointing at the protected-resource metadata, which is
+what lets an OAuth-capable client start the flow on its own.
 
 ---
 
 ## Tools
 
-26 tools. Which ones appear in `tools/list` depends on your plan — a tool your plan does not
-include is **absent**, not present-and-refusing.
+42 tools. Which ones appear in `tools/list` depends on your plan — a tool your plan does not
+include is **absent**, not present-and-refusing. [Console →
+Help](https://app.whatsmcp.com/console/help) lists the set *your* workspace gets, marked
+against what your plan includes.
 
 **Start with `wa_list_accounts`.** Every other tool takes an `account_id` from it, and an
 account is usable only while its `state` is `connected`.
 
-### Accounts and pairing
+### Accounts, pairing and plan
 
 | Tool | Does |
 |---|---|
@@ -236,6 +380,8 @@ account is usable only while its `state` is `connected`.
 | `wa_pair_account` | Starts linking a new number; returns a QR as a base64 PNG |
 | `wa_pair_status` | Polls a pairing; returns a fresh code while one is waiting |
 | `wa_unpair_account` | Disconnects a linked number |
+| `wa_get_plan` | Your plan, its limits, and usage so far against the message and account caps — call it to see why a send was refused, or how much headroom is left |
+| `wa_get_version` | The version of the service you are talking to |
 
 ### Messaging
 
@@ -246,12 +392,42 @@ account is usable only while its `state` is `connected`.
 | `wa_get_chat` | Recent messages for one account, no cursor — a one-off catch-up |
 | `wa_get_media` | Downloads a received attachment by `message_id` (base64 + mime) |
 
-### Contacts
+### Message operations
+
+Each of these acts on a message that already exists, so each one takes the `message_id` that
+`wa_list_messages` gave you.
+
+| Tool | Does |
+|---|---|
+| `wa_react` | Reacts with an emoji; an empty reaction removes one you sent |
+| `wa_edit_message` | Edits a message you sent — WhatsApp accepts an edit for about 20 minutes |
+| `wa_delete_message` | Deletes for everyone. WhatsApp has no true delete; this revokes the message, which every modern client honours |
+| `wa_set_presence` | Announces typing (`composing`/`paused`) to a chat, or sets an account `available`/`unavailable`. Fire-and-forget — there is no delivery confirmation |
+
+### Contacts and profiles
 
 | Tool | Does |
 |---|---|
 | `wa_list_contacts` | The account's address book, paged |
 | `wa_search_contacts` | Finds contacts by name or number |
+| `wa_get_profile` | Looks up who a number is on WhatsApp: whether it is registered, its public name, about text, picture, and a business's categories, contact details and hours |
+
+Unlike the two above it, `wa_get_profile` asks WhatsApp rather than reading the local store.
+An empty about or picture means the peer has not shared it **with this account**, not that
+they have none.
+
+### Blocklist
+
+| Tool | Does |
+|---|---|
+| `wa_block_contact` | Blocks a contact — they can no longer call or message this account |
+| `wa_unblock_contact` | Unblocks one again |
+| `wa_list_blocked` | Everyone this account has blocked |
+
+All three report *who*, not just a number: each entry carries the number, the name this
+account's address book has for them (absent for someone never saved on the phone) and the
+country the number belongs to. WhatsApp does not record **when** a contact was blocked, so no
+date is available.
 
 ### Groups and channels
 
@@ -264,9 +440,22 @@ account is usable only while its `state` is `connected`.
 | `wa_leave_chat` | Leaves a group or unfollows a channel |
 | `wa_list_group_members` | A group's members, each with JID, phone and admin flag |
 | `wa_create_group` | Creates a group; returns its JID and invite link |
-| `wa_add_participants` / `wa_remove_participants` | Adds or removes members |
-| `wa_promote_participants` / `wa_demote_participants` | Grants or revokes admin |
 | `wa_delete_group` | Removes every other member, then leaves (WhatsApp has no true delete) |
+
+### Group administration
+
+Every one of these follows WhatsApp's own rules: a mutation that needs admin fails without
+it, rather than silently doing nothing.
+
+| Tool | Does |
+|---|---|
+| `wa_add_participants` / `wa_remove_participants` | Adds or removes members by phone number or JID |
+| `wa_promote_participants` / `wa_demote_participants` | Grants or revokes admin |
+| `wa_set_group_name` | Renames the group |
+| `wa_set_group_description` | Sets its description |
+| `wa_set_group_locked` | Restricts name/description/photo to admins, or opens them to everyone |
+| `wa_set_group_announce` | Restricts posting to admins (an "announcement" group), or opens it |
+| `wa_get_group_invite_link` | Returns the invite link, or with `reset` revokes it and issues a new one |
 
 ### Calls
 
@@ -278,9 +467,14 @@ account is usable only while its `state` is `connected`.
 
 | Tool | Does |
 |---|---|
-| `wa_set_webhook` | Registers an HTTPS endpoint for inbound messages |
+| `wa_set_webhook` | Registers an HTTPS endpoint for inbound messages; returns a signing secret shown **once** |
 | `wa_get_webhook` | Shows the endpoint, whether it is enabled, when it last succeeded |
+| `wa_enable_webhook` | Pauses or resumes delivery **without** changing the endpoint or its secret |
 | `wa_delete_webhook` | Stops delivery; messages remain readable through the tools |
+
+Reach for `wa_enable_webhook` rather than deleting and recreating when you only want
+deliveries to stop for a while: deleting issues a new secret, and everything verifying the
+old one breaks.
 
 ---
 
@@ -489,9 +683,33 @@ group management require the account to be opted into group and channel messagin
 bridge** — ask us to switch it on for a number. Without it the account refuses these calls,
 and the refusal says so verbatim rather than failing generically.
 
-Group management (`wa_create_group`, add/remove, promote/demote, delete) follows WhatsApp's
-own rules: mutations that need admin fail without it. `wa_delete_group` removes every other
-member and then leaves, because WhatsApp has no true delete.
+Group management (`wa_create_group`, add/remove, promote/demote, the `wa_set_group_*`
+settings, delete) follows WhatsApp's own rules: mutations that need admin fail without it.
+`wa_delete_group` removes every other member and then leaves, because WhatsApp has no true
+delete.
+
+---
+
+## Plans and limits
+
+Every workspace starts on the **free plan**, which is enough to link a number and drive it
+from an agent. Paid plans raise the caps and add capability:
+
+| | What a plan decides |
+|---|---|
+| **Accounts** | How many WhatsApp numbers you can link at once |
+| **Messages** | Send caps per hour and per 24 hours |
+| **History** | How long stored message bodies are kept before they are purged — `wa_list_messages` reads back exactly as far as that window |
+| **Webhooks** | Inbound delivery — a paid capability, and the gate on the four `wa_*_webhook` tools |
+| **Egress** | Routing an account's bridge through your own WireGuard tunnel or SOCKS5 proxy |
+
+A capability your plan does not include does not appear as a failing tool — the tool is
+**absent from `tools/list` entirely**, so a model never proposes a call that was always going
+to fail.
+
+Ask the service rather than this page for the numbers: **`wa_get_plan`** returns your plan,
+its limits and your usage so far, and [Console →
+Usage](https://app.whatsmcp.com/console/usage) shows the same counters.
 
 ---
 
@@ -520,21 +738,41 @@ so a model can read it and decide what to do:
 
 `retry_after_seconds` absent or `0` means **retrying will not help**.
 
-At the transport level: an invalid or revoked key gets `401` (never `500`, so a client does
-not retry a dead credential forever), and the endpoint is rate-limited per source address.
+At the transport level: an invalid or revoked credential gets `401` (never `500`, so a client
+does not retry a dead credential forever), and the endpoint is rate-limited per source
+address.
 
 ---
 
 ## Security model
 
-- **The key is the identity.** It is verified at the edge and resolved to a workspace before
-  any tool runs; the workspace travels on the request context, never as a tool argument.
-  There is no field in which one workspace could name another.
+- **The credential is the identity.** An API key and an OAuth grant resolve to the same
+  thing: a workspace, decided at the edge before any tool runs. It travels on the request
+  context, never as a tool argument, so there is no field in which one workspace could name
+  another.
 - **A foreign id reads as "no such account"**, not "forbidden" — probing reveals nothing.
 - **Keys are stored hashed**, shown once at creation, and revocable individually.
+- **OAuth grants are revocable per client** from
+  [Console → Connections](https://app.whatsmcp.com/console/connections). Authorization codes
+  are single-use and refresh tokens rotate; replaying a retired one revokes the grant rather
+  than issuing another.
 - **Webhook bodies are signed** with HMAC-SHA256 over a timestamped payload.
 - Your WhatsApp account remains yours: WhatsMCP is a linked device, and you can remove it at
   any time from the handset (**Settings → Linked devices**) or with `wa_unpair_account`.
+
+---
+
+## Status and licence
+
+WhatsMCP is **live and self-serve** — the service described here runs in production and you
+can sign up for it today without talking to anyone.
+
+This repository is the **public documentation** for that hosted service. The server's source
+is not published, and no licence is granted over the contents of this repository: it is
+public to read, not licensed for reuse or redistribution.
+
+WhatsMCP is an unofficial integration. It is not affiliated with, authorised by, or endorsed
+by Meta or WhatsApp.
 
 ---
 
@@ -543,15 +781,22 @@ not retry a dead credential forever), and the endpoint is rate-limited per sourc
 | | |
 |---|---|
 | Product site | <https://whatsmcp.com> |
+| Documentation | <https://whatsmcp.com/docs/mcp> |
 | Create an account | <https://app.whatsmcp.com/console/register> |
 | Sign in | <https://app.whatsmcp.com/console/login> |
 | Console | <https://app.whatsmcp.com/console> |
 | Help (your workspace's own connection details) | <https://app.whatsmcp.com/console/help> |
 | MCP endpoint | `https://app.whatsmcp.com/mcp` |
+| SIP ↔ WhatsApp voice bridge | <https://whatsmcp.com/sip> |
+| Engineering blog | <https://whatsmcp.com/blog> |
 | Model Context Protocol | <https://modelcontextprotocol.io> |
+| Organisation on GitHub | <https://github.com/whatsmcp> |
 | Privacy Policy | <https://whatsmcp.com/privacy> |
 | Terms of Service | <https://whatsmcp.com/terms> |
 | Contact / support | <https://whatsmcp.com/contact> |
 
 Questions, a number that needs group messaging switched on, or a plan that does not fit —
-open an issue here, use the contact link above, or write to us from the console.
+[open an issue](https://github.com/whatsmcp/mcp/issues), use the contact link above, or write
+to us from the console.
+
+<p align="center"><sub>WhatsMCP — one endpoint, one linked number, and your agent is on WhatsApp.</sub></p>
