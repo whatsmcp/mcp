@@ -26,6 +26,7 @@
   <a href="#tools">Tools</a> ·
   <a href="#reading-incoming-messages">Polling</a> ·
   <a href="#webhooks">Webhooks</a> ·
+  <a href="#calling-over-sip">SIP trunk</a> ·
   <a href="#security-model">Security</a>
 </p>
 
@@ -33,7 +34,9 @@
 
 Your agent can read chats, reply, look people up in the address book, react to and edit
 messages, manage groups, block and unblock contacts, fetch attachments and receive inbound
-messages by webhook.
+messages by webhook. The same linked number can also go on a **SIP trunk**, so its
+WhatsApp calls ring a desk phone, a softphone or your PBX and your extensions call out on
+WhatsApp as that number. See [Calling over SIP](#calling-over-sip).
 
 There is nothing to install and nothing to run locally — it is a **remote MCP server over
 Streamable HTTP**. Your client talks to `https://app.whatsmcp.com/mcp` and signs in with
@@ -59,6 +62,7 @@ OAuth, or presents an API key.
 - [Webhooks](#webhooks)
 - [Sending](#sending)
 - [Groups and channels](#groups-and-channels)
+- [Calling over SIP](#calling-over-sip)
 - [Plans and limits](#plans-and-limits)
 - [Refusals and error handling](#refusals-and-error-handling)
 - [Security model](#security-model)
@@ -119,9 +123,11 @@ Everything lives in the console:
 | [Connections](https://app.whatsmcp.com/console/connections) | Clients you signed in with OAuth, and a revoke button per client |
 | [Webhooks](https://app.whatsmcp.com/console/webhooks) | Inbound delivery endpoint and its recent attempts |
 | [Usage](https://app.whatsmcp.com/console/usage) | Messages sent against your plan's caps |
+| [SIP](https://app.whatsmcp.com/console/sip) | Put a number's calls on a hosted SIP line or your own PBX, per number |
 | [Help](https://app.whatsmcp.com/console/help) | The connection details for *your* workspace, and which tools your plan includes |
 
-Per-number pages (Messages, **Contacts**, Calls) hang off each account in the same console.
+Per-number pages (Messages, **Contacts**, Calls, **SIP**) hang off each account in the same
+console.
 
 ---
 
@@ -690,6 +696,91 @@ delete.
 
 ---
 
+## Calling over SIP
+
+*Beta.* WhatsMCP bridges **WhatsApp voice calls to SIP in both directions**. A WhatsApp call
+to your linked number rings a SIP phone or your PBX as an ordinary `INVITE`; an extension
+that dials a WhatsApp number in E.164 reaches that person on WhatsApp, and the call shows
+**your number** as the caller. This is not the Meta Business Calling API — no business
+verification and no per-minute billing.
+
+It is set up per number in [Console → SIP](https://app.whatsmcp.com/console/sip), and there
+are two ways to connect.
+
+### A hosted SIP line — no PBX needed
+
+We run the phone system: the number gets a SIP account on our server and you register any
+SIP phone, softphone or browser to it. The console shows the server, username and password
+(with **Show**, **Copy** and **New password**), and whether your phone and the WhatsApp
+bridge are each registered right now.
+
+Pick the **phone type** for the line — the two cannot share one endpoint:
+
+| Phone type | For | Connect with | Media |
+|---|---|---|---|
+| **SIP phone** | Desk phones, softphones, PBXes | The SIP server over **TLS on port 5061** — plain UDP 5060 only for a phone that cannot do TLS | SRTP (SDES) — turn it on in your phone. Plain RTP if the phone does not offer it |
+| **Browser (WebRTC)** | The dialer built into the console, or your own WebRTC client | The WebSocket URL the console shows (`wss`, port 8089) | DTLS-SRTP, which the browser does by itself |
+
+With **Browser** selected the SIP page carries a **dialer**: sign the browser in to the line,
+dial a WhatsApp number or wait for one to call, and talk through the microphone — no
+hardware at all.
+
+A hosted line holds **one registration** and **one call at a time**. A second device that
+signs in to the same line takes the registration from the first, so run one phone per line.
+**Connection history** on the line's page shows when your phone and the bridge registered,
+and when either one dropped.
+
+### Your own PBX or CRM phone system
+
+The bridge **registers outbound** to your registrar as an ordinary SIP extension, so there is
+no inbound firewall rule to open for signalling. You give it:
+
+| Field | |
+|---|---|
+| **Registrar** | `host` or `host:port` — the port defaults to 5060 over UDP, 5061 over TLS |
+| **Transport** | **UDP** (what most PBXes accept out of the box) or **TLS** for encrypted signalling — your PBX must then present a publicly-issued certificate for that host. Call audio to your PBX is plain RTP for now |
+| **Username / password** | The extension or trunk account on your PBX. The password is stored encrypted and never shown again |
+| **Extension to ring** | Where incoming WhatsApp calls go — `101` by default, or `caller` / `9:caller` to pass the caller's number into your dialplan |
+
+The credentials are **checked against your registrar before they are saved**, and **Test
+connection** dials it again on demand and tells you what answered. Extensions call out by
+dialling the WhatsApp number in E.164 **without the leading `+`**.
+
+### Codecs
+
+WhatsApp chooses its own codec per call — **Opus**, or **MLow**, Meta's low-bitrate codec,
+on a constrained network — and may switch mid-call. The bridge decodes it and re-encodes for
+your side, so your PBX never has to know MLow exists:
+
+| Your side | |
+|---|---|
+| **G.722** | Offered first — wideband (16 kHz), the same bandwidth WhatsApp carries |
+| **G.711 µ-law (PCMU)** | The fallback every SIP phone and PBX speaks — narrowband (8 kHz) |
+| **G.711 A-law (PCMA)** | Accepted when your side prefers it |
+
+Allow `g722` on your trunk and calls stay wideband end to end; a phone that only speaks G.711
+still works, at landline quality.
+
+### Voice plans
+
+SIP calling is a **voice plan**, billed per line and separate from your messaging plan. It
+decides which directions a number may use — **incoming only**, or **incoming and
+outgoing** — and the SIP page states what your plan allows. A call in a direction the plan
+does not include is declined rather than half-connected. Prices are flat per line per month,
+with no per-minute charges: see [whatsmcp.com/sip](https://whatsmcp.com/sip#voice-plans).
+
+Every call, SIP or not, lands in the number's call history — direction, peer, whether it was
+answered, duration, end reason and codec — in the console, and through the `wa_list_calls`
+tool.
+
+> **Hear it first.** The [SIP page](https://whatsmcp.com/sip) has a live demo number:
+> message it on WhatsApp and it calls you back.
+
+Need a dedicated number that lives only on the trunk (no handset), or many lines? [Talk to
+us](https://whatsmcp.com/contact?inquiry=sip-trunk).
+
+---
+
 ## Plans and limits
 
 Every workspace starts on the **free plan**, which is enough to link a number and drive it
@@ -702,6 +793,7 @@ from an agent. Paid plans raise the caps and add capability:
 | **History** | How long stored message bodies are kept before they are purged — `wa_list_messages` reads back exactly as far as that window |
 | **Webhooks** | Inbound delivery — a paid capability, and the gate on the four `wa_*_webhook` tools |
 | **Egress** | Routing an account's bridge through your own WireGuard tunnel or SOCKS5 proxy |
+| **Voice** | A separate per-line voice plan puts a number's calls on SIP — see [Calling over SIP](#calling-over-sip) |
 
 A capability your plan does not include does not appear as a failing tool — the tool is
 **absent from `tools/list` entirely**, so a model never proposes a call that was always going
@@ -788,6 +880,7 @@ by Meta or WhatsApp.
 | Help (your workspace's own connection details) | <https://app.whatsmcp.com/console/help> |
 | MCP endpoint | `https://app.whatsmcp.com/mcp` |
 | SIP ↔ WhatsApp voice bridge | <https://whatsmcp.com/sip> |
+| SIP console | <https://app.whatsmcp.com/console/sip> |
 | Engineering blog | <https://whatsmcp.com/blog> |
 | Model Context Protocol | <https://modelcontextprotocol.io> |
 | Organisation on GitHub | <https://github.com/whatsmcp> |
@@ -795,7 +888,8 @@ by Meta or WhatsApp.
 | Terms of Service | <https://whatsmcp.com/terms> |
 | Contact / support | <https://whatsmcp.com/contact> |
 
-Questions, a number that needs group messaging switched on, or a plan that does not fit —
+Questions, a number that needs group messaging switched on, a SIP trunk to size, or a plan
+that does not fit —
 [open an issue](https://github.com/whatsmcp/mcp/issues), use the contact link above, or write
 to us from the console.
 
