@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Give your agent a real WhatsApp account.</strong><br>
-  A hosted <a href="https://modelcontextprotocol.io">Model Context Protocol</a> server.
+  The hosted <strong>WhatsApp MCP server</strong> — a <a href="https://modelcontextprotocol.io">Model Context Protocol</a> server for WhatsApp.
   Link a number once, point any MCP client at one HTTPS endpoint — no SDK,
   nothing to install, nothing to run locally.
 </p>
@@ -15,7 +15,7 @@
   <a href="https://whatsmcp.com"><img alt="Website" src="https://img.shields.io/badge/website-whatsmcp.com-22C55E?style=flat-square"></a>
   <a href="https://whatsmcp.com/docs/mcp"><img alt="Documentation" src="https://img.shields.io/badge/docs-%2Fdocs%2Fmcp-0A1120?style=flat-square"></a>
   <a href="https://modelcontextprotocol.io"><img alt="MCP specification" src="https://img.shields.io/badge/MCP-2026--07--28-6E56CF?style=flat-square"></a>
-  <img alt="Tools" src="https://img.shields.io/badge/tools-36-0A1120?style=flat-square">
+  <img alt="Tools" src="https://img.shields.io/badge/tools-46-0A1120?style=flat-square">
   <a href="#connect-your-client"><img alt="Authentication" src="https://img.shields.io/badge/auth-OAuth%202.1%20%C2%B7%20API%20key-F5A623?style=flat-square"></a>
   <img alt="Status" src="https://img.shields.io/badge/status-live-22C55E?style=flat-square">
 </p>
@@ -26,7 +26,6 @@
   <a href="#tools">Tools</a> ·
   <a href="#reading-incoming-messages">Polling</a> ·
   <a href="#webhooks">Webhooks</a> ·
-  <a href="#calling-over-sip">SIP trunk</a> ·
   <a href="#security-model">Security</a>
 </p>
 
@@ -34,19 +33,16 @@
 
 Your agent can read chats, reply, look people up in the address book, react to and edit
 messages, manage groups, block and unblock contacts, fetch attachments and receive inbound
-messages by webhook. The same linked number can also go on a **SIP trunk**, so its
-WhatsApp calls ring a desk phone, a softphone or your PBX and your extensions call out on
-WhatsApp as that number. See [Calling over SIP](#calling-over-sip).
+messages by webhook.
 
 There is nothing to install and nothing to run locally — it is a **remote MCP server over
 Streamable HTTP**. Your client talks to `https://api.whatsmcp.com/mcp` and signs in with
 OAuth, or presents an API key.
 
-> **The simple path is not the WhatsApp Business API.** You link a normal WhatsApp account by
-> scanning a QR code from the phone — exactly like WhatsApp Web — and your agent uses it as a
-> linked device: no templates, no 24-hour session window, no message approval, no
-> per-conversation billing. A **WhatsApp Business (Cloud API)** number can be linked too, when
-> you do want Meta-reviewed templates — see **Templates**, below.
+> **Not the WhatsApp Business API.** No templates, no 24-hour session window, no message
+> approval, no per-conversation billing. You link a normal WhatsApp account by scanning a
+> QR code from the phone — exactly like WhatsApp Web — and your agent uses it as a linked
+> device.
 
 ---
 
@@ -63,7 +59,6 @@ OAuth, or presents an API key.
 - [Webhooks](#webhooks)
 - [Sending](#sending)
 - [Groups and channels](#groups-and-channels)
-- [Calling over SIP](#calling-over-sip)
 - [Plans and limits](#plans-and-limits)
 - [Refusals and error handling](#refusals-and-error-handling)
 - [Security model](#security-model)
@@ -75,7 +70,7 @@ OAuth, or presents an API key.
 ## Quick start
 
 ```
-1. Create a workspace     →  https://console.whatsmcp.com/register
+1. Create a workspace     →  https://app.whatsmcp.com/console/register
 2. Link a WhatsApp number →  Console → Pair device (scan the QR with your phone)
 3. Give your client       →  https://api.whatsmcp.com/mcp
                              …and sign in when it asks. No key to paste.
@@ -102,8 +97,8 @@ Sign-up is self-serve and free — no card, no sales call.
 
 | | |
 |---|---|
-| **Create an account** | <https://console.whatsmcp.com/register> |
-| **Sign in** | <https://console.whatsmcp.com/login> |
+| **Create an account** | <https://app.whatsmcp.com/console/register> |
+| **Sign in** | <https://app.whatsmcp.com/console/login> |
 | **Product site** | <https://whatsmcp.com> |
 
 You give a name and an email address. We send a confirmation link; opening it is where you
@@ -118,17 +113,15 @@ Everything lives in the console:
 
 | Console page | What it is for |
 |---|---|
-| [Fleet](https://console.whatsmcp.com/fleet) | Every linked number and whether it is connected |
-| [Pair device](https://console.whatsmcp.com/pair) | Link a new WhatsApp number by QR |
-| [API keys](https://console.whatsmcp.com/keys) | Mint and revoke keys; copy-paste connection examples |
-| [Connections](https://console.whatsmcp.com/connections) | Clients you signed in with OAuth, and a revoke button per client |
-| [Webhooks](https://console.whatsmcp.com/webhooks) | Inbound delivery endpoint and its recent attempts |
-| [Usage](https://console.whatsmcp.com/usage) | Messages sent against your plan's caps |
-| [SIP](https://console.whatsmcp.com/sip) | Put a number's calls on a hosted SIP line or your own PBX, per number |
-| [Help](https://console.whatsmcp.com/help) | The connection details for *your* workspace, and which tools your plan includes |
+| [Fleet](https://app.whatsmcp.com/console/fleet) | Every linked number and whether it is connected |
+| [Pair device](https://app.whatsmcp.com/console/pair) | Link a new WhatsApp number by QR |
+| [API keys](https://app.whatsmcp.com/console/keys) | Mint and revoke keys; copy-paste connection examples |
+| [Connections](https://app.whatsmcp.com/console/connections) | Clients you signed in with OAuth, and a revoke button per client |
+| [Webhooks](https://app.whatsmcp.com/console/webhooks) | Inbound delivery endpoint and its recent attempts |
+| [Usage](https://app.whatsmcp.com/console/usage) | Messages sent against your plan's caps |
+| [Help](https://app.whatsmcp.com/console/help) | The connection details for *your* workspace, and which tools your plan includes |
 
-Per-number pages (Messages, **Contacts**, Calls, **SIP**) hang off each account in the same
-console.
+Per-number pages (Messages, **Contacts**, Calls) hang off each account in the same console.
 
 ---
 
@@ -137,7 +130,7 @@ console.
 WhatsMCP connects as a **linked device**, the same mechanism as WhatsApp Web. Your phone
 stays the primary device and can stay in your pocket afterwards.
 
-**From the console:** open [Pair device](https://console.whatsmcp.com/pair), then on the
+**From the console:** open [Pair device](https://app.whatsmcp.com/console/pair), then on the
 handset go to **WhatsApp → Settings → Linked devices → Link a device** and scan the code.
 
 ![Pairing a device: the console shows a QR code and a four-stage progress indicator — code, scanned, syncing, ready](assets/pair-device.png)
@@ -171,7 +164,7 @@ Once `state` is `paired` the number appears in `wa_list_accounts` and is ready t
 client](#connect-your-client). Keys are for `curl`, for CI, and for clients that cannot do
 OAuth.
 
-[Console → API keys](https://console.whatsmcp.com/keys) → **Create key**.
+[Console → API keys](https://app.whatsmcp.com/console/keys) → **Create key**.
 
 Keys look like `wamcp_live_XXXXXXXXXXXX_…` and are **shown exactly once** — we store only a
 hash, so a lost key is replaced, never recovered. Mint one key per client or per environment
@@ -192,11 +185,13 @@ Any MCP client that speaks **Streamable HTTP** will work. There is one endpoint:
 
 There are two ways to prove who you are against it.
 
+> **Per-client setup guides** — Claude, ChatGPT, Codex, Cursor, Grok and Manus — live at [whatsmcp.com/connect](https://whatsmcp.com/connect).
+
 **OAuth — recommended, and what every client below does by default.** The client reads the
 server's own metadata, registers itself, and sends you to the console to approve it. Nothing
 is pasted anywhere: no key is created, none is stored in a config file, and you can revoke
 one client without touching the others from
-[Console → Connections](https://console.whatsmcp.com/connections).
+[Console → Connections](https://app.whatsmcp.com/console/connections).
 
 **An API key** — `Authorization: Bearer <your key>`, or `x-api-key: <your key>` for clients
 that reserve `Authorization` for a token they manage themselves. Use it for `curl`, for CI,
@@ -296,42 +291,6 @@ export WHATSMCP_API_KEY=wamcp_live_…
 Codex sends that as `Authorization: Bearer …`. If you would rather set headers yourself, use
 `http_headers` for static values and `env_http_headers` to pull them from the environment.
 
-### Cursor
-
-Add it under **Settings → Tools & Integrations → New MCP Server**, which opens your
-`mcp.json` — `~/.cursor/mcp.json` for every project, or a repo's `.cursor/mcp.json` to share
-one with your team. The OAuth default needs nothing but the URL:
-
-```json
-{
-  "mcpServers": {
-    "wamcp": {
-      "url": "https://api.whatsmcp.com/mcp"
-    }
-  }
-}
-```
-
-Reload Cursor; a browser tab opens for you to sign in, and `wamcp` then shows green with its
-tools under **Tools & Integrations**. Native OAuth for remote servers needs **Cursor 1.0 or
-newer** — if an older build will not pick the server up, add `"type": "http"` next to the
-`url`.
-
-To use a key instead, add a header to the same entry — no sign-in step:
-
-```json
-{
-  "mcpServers": {
-    "wamcp": {
-      "url": "https://api.whatsmcp.com/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_KEY"
-      }
-    }
-  }
-}
-```
-
 ### Every other client
 
 Clients differ in where they keep configuration, but they all need the same thing: the
@@ -359,7 +318,7 @@ A client registers itself either by **Dynamic Client Registration** (RFC 7591, a
 `/oauth/register`) or by publishing a **Client ID Metadata Document** whose URL is its client
 id — both are supported, and the vendors above use one or the other. Then it is an ordinary
 authorization-code flow with **PKCE** (`S256` only): you land on the consent page at
-`console.whatsmcp.com/oauth/authorize`, approve, and the code is exchanged at `/oauth/token`.
+`/console/oauth/authorize`, approve, and the code is exchanged at `/oauth/token`.
 Authorization codes are single-use, refresh tokens rotate on every use, and a retired refresh
 token being replayed revokes the whole grant rather than issuing another. Tokens are bound to
 this resource (RFC 8707) and revocable at `/oauth/revoke` (RFC 7009).
@@ -380,7 +339,7 @@ Seven scopes are advertised and recorded on each grant:
 > a description of what the connection is for, not as a sandbox.
 
 Grants are listed and revocable at
-[Console → Connections](https://console.whatsmcp.com/connections). Revoking one there
+[Console → Connections](https://app.whatsmcp.com/console/connections). Revoking one there
 disconnects that client and nothing else.
 
 ### Check it by hand
@@ -407,9 +366,10 @@ what lets an OAuth-capable client start the flow on its own.
 
 ## Tools
 
-46 tools. Which ones appear in `tools/list` depends on your plan — a tool your plan does not
-include is **absent**, not present-and-refusing. [Console →
-Help](https://console.whatsmcp.com/help) lists the set *your* workspace gets, marked
+46 tools. Which ones appear in `tools/list` depends on your plan and the kind of number — a
+tool your plan does not include, or that only applies to a Business (Cloud API) number, is
+**absent**, not present-and-refusing. [Console →
+Help](https://app.whatsmcp.com/console/help) lists the set *your* workspace gets, marked
 against what your plan includes.
 
 **Start with `wa_list_accounts`.** Every other tool takes an `account_id` from it, and an
@@ -423,19 +383,18 @@ account is usable only while its `state` is `connected`.
 | `wa_pair_account` | Starts linking a new number; returns a QR as a base64 PNG |
 | `wa_pair_status` | Polls a pairing; returns a fresh code while one is waiting |
 | `wa_unpair_account` | Disconnects a linked number |
-| `wa_set_profile_photo` | Replaces or removes the profile photo of one of your numbers — the picture every contact sees |
 | `wa_get_plan` | Your plan, its limits, and usage so far against the message and account caps — call it to see why a send was refused, or how much headroom is left |
 
 ### Messaging
 
 | Tool | Does |
 |---|---|
-| `wa_send_message` | Sends text, an image, a document or audio from one of your numbers |
+| `wa_send_message` | Sends text, an image, a document or audio from one of your numbers; on a Business number, also an approved template |
 | `wa_list_messages` | Reads messages across accounts, oldest first, paged by cursor |
 | `wa_get_chat` | Recent messages for one account, no cursor — a one-off catch-up |
-| `wa_get_message` | Fetches one stored message by its WhatsApp id or cursor — the one a webhook just announced, say |
+| `wa_get_message` | Fetches **one** stored message by `message_id` or cursor — the one a webhook told you about, without paging |
 | `wa_get_media` | Downloads a received attachment by `message_id` (base64 + mime) |
-| `wa_load_history` | Asks the phone for older messages in a chat, before the oldest stored here, and saves them — they return in `wa_list_messages` only with `include_history: true` |
+| `wa_load_history` | Asks the account's phone for older messages in one chat and stores them; read them back with `wa_get_chat` |
 
 ### Message operations
 
@@ -453,10 +412,11 @@ Each of these acts on a message that already exists, so each one takes the `mess
 
 | Tool | Does |
 |---|---|
-| `wa_list_contacts` | The account's address book, paged — or, with a `query`, a search by name or number; optionally with profile pictures |
+| `wa_list_contacts` | The account's address book, paged |
 | `wa_get_profile` | Looks up who a number is on WhatsApp: whether it is registered, its public name, about text, picture, and a business's categories, contact details and hours |
+| `wa_set_profile_photo` | Changes (or removes) the profile photo of one of **your own** accounts — the picture every contact sees |
 
-Unlike `wa_list_contacts` above, `wa_get_profile` asks WhatsApp rather than reading the local store.
+Unlike `wa_list_contacts`, `wa_get_profile` asks WhatsApp rather than reading the local store.
 An empty about or picture means the peer has not shared it **with this account**, not that
 they have none.
 
@@ -464,7 +424,7 @@ they have none.
 
 | Tool | Does |
 |---|---|
-| `wa_block_contact` | Blocks a contact — they can no longer call or message this account — or, with `unblock: true`, unblocks one again |
+| `wa_block_contact` | Blocks or unblocks a contact — a blocked contact can no longer call or message this account |
 | `wa_list_blocked` | Everyone this account has blocked |
 
 Both report *who*, not just a number: each entry carries the number, the name this
@@ -492,9 +452,9 @@ it, rather than silently doing nothing.
 
 | Tool | Does |
 |---|---|
-| `wa_update_participants` | Adds members by phone number or JID, or promotes members to admin and demotes admins back — `action` is `add`, `promote` or `demote` |
-| `wa_remove_participants` | Removes members from the group |
-| `wa_update_group` | Changes the group's `name`, `description`, whether only admins may change settings (`locked`) and whether only admins may post (`announce`) — any of them in one call |
+| `wa_update_participants` | Adds members, or promotes/demotes admins (`action` = `add`, `promote` or `demote`), by phone number or JID |
+| `wa_remove_participants` | Removes members by phone number or JID |
+| `wa_update_group` | Changes the group's name, description, and whether only admins may change settings (`locked`) or post (`announce`) — any subset in one call |
 | `wa_get_group_invite_link` | Returns the invite link, or with `reset` revokes it and issues a new one |
 
 ### Calls
@@ -502,20 +462,6 @@ it, rather than silently doing nothing.
 | Tool | Does |
 |---|---|
 | `wa_list_calls` | Call history, oldest first, paged — direction, peer, `answered`, `seconds`, `reason`, `codec` |
-
-### AI voice agents *(voice plans)*
-
-An AI voice agent places and answers WhatsApp calls on one of your numbers. It dials from a
-**preset** — a voice agent bound to a number, with default variables — runs the call on its
-own, and leaves a summary, transcript, collected data and a recording.
-
-| Tool | Does |
-|---|---|
-| `wa_ai_list_presets` | Your presets — each pairs an agent with one of your numbers and lists the variables its prompt expects |
-| `wa_ai_call_start` | Has a preset's agent call a number; pass per-call `variables`. Returns a `call_ref`, then the call rings and runs on its own |
-| `wa_ai_call_get` | A call's status, and once it ends the summary, whether the agent judged it a success, the data it collected, the transcript and a one-hour recording link |
-| `wa_ai_call_hangup` | Ends a live call — one you started, or an inbound one an agent answered |
-| `wa_ai_list_calls` | The workspace's AI calls, newest first — outbound, and inbound calls a preset answered |
 
 ### Webhooks *(paid plans)*
 
@@ -530,35 +476,47 @@ Reach for `wa_enable_webhook` rather than deleting and recreating when you only 
 deliveries to stop for a while: deleting issues a new secret, and everything verifying the
 old one breaks.
 
-### Templates *(Business numbers)*
+### AI voice agents *(plan-gated)*
 
-A **WhatsApp Business (Cloud API)** number — the other kind of number WhatsMCP can connect —
-sends Meta-reviewed message templates, which is how you open a conversation or reach someone
-outside the 24-hour window. These do not apply to a personal linked-device number.
+An AI voice agent places and answers real WhatsApp calls from one of your numbers, driven by
+a **preset** — an agent, the line it calls from, and default variables.
 
 | Tool | Does |
 |---|---|
-| `wa_create_template` | Submits a template for Meta's review — `MARKETING` or `UTILITY`, with numbered `{{1}}` body variables; sendable with `wa_send_message` once `wa_list_templates` shows it `APPROVED` |
-| `wa_list_templates` | A Business number's templates, each with its review status — `APPROVED`, `PENDING` or `REJECTED` (with Meta's reason) |
-| `wa_delete_template` | Removes a template — one language, or every language of the name |
+| `wa_ai_list_presets` | Lists the workspace's voice-agent presets; only a `ready` one can call now |
+| `wa_ai_call_start` | Has an agent call a number using a preset; returns a `call_ref` and runs on its own |
+| `wa_ai_call_get` | Reads a call — status, and once ended the summary, collected data, transcript and a one-hour `recording_url` |
+| `wa_ai_list_calls` | Lists voice-agent calls, newest first — outbound and answered inbound |
+| `wa_ai_call_hangup` | Ends a live call (outbound, or an inbound one an agent answered) |
+
+### Templates *(Business numbers)*
+
+WhatsApp Business (Cloud API) numbers message outside the 24-hour window with **templates**
+Meta has approved.
+
+| Tool | Does |
+|---|---|
+| `wa_create_template` | Submits a template (`MARKETING` or `UTILITY`) for Meta's review |
+| `wa_list_templates` | Lists templates with each one's review status (`APPROVED`, `PENDING`, `REJECTED`) |
+| `wa_delete_template` | Deletes a template — one language, or every language of the name |
 
 ### Feedback
 
 | Tool | Does |
 |---|---|
-| `wa_report` | Sends a bug report, feature request or feedback about WhatsMCP to the team, tagged with your workspace and reply address — not a way to message a WhatsApp contact |
+| `wa_report` | Sends a bug report, feature request or feedback to the WhatsMCP team — not a WhatsApp message |
 
 ---
 
 ## Contacts
 
-Your agent should not have to make you be the address book. `wa_list_contacts` reads the
-contacts **synced from the phone the account is linked to**, so an agent can turn *“message
-Alice”* into a number on its own.
+Your agent should not have to make you be the address book. `wa_list_contacts` reads the contacts
+**synced from the phone the account is linked to**, so an agent can turn *“message Alice”*
+into a number on its own.
 
 It reads the account's **local** contact store. Nothing here talks to WhatsApp: no lookups
 are performed against the network, and asking is free of any rate cost beyond your plan's
-ordinary request throttling. (`wa_get_profile`, below, is the one that does reach WhatsApp.)
+ordinary request throttling.
 
 ### `wa_list_contacts` — the whole address book
 
@@ -588,27 +546,6 @@ wa_list_contacts({ "account_id": "acct_…", "limit": 500 })
 
 Paging is by cursor over a stable order (sorted by phone), so it never repeats or skips a
 row. Default page 500, maximum 2000.
-
-### Search with `query` — find one person
-
-Pass a `query` and the same tool searches instead of listing:
-
-```jsonc
-wa_list_contacts({ "account_id": "acct_…", "query": "+44 7700 900111" })
-```
-
-Matching is case-insensitive and ignores punctuation in numbers, so `"+44 7700 900111"`
-finds a contact stored as `447700900111`. It looks at saved names, business names, the name
-the contact publishes for themselves, and the number. An empty result means no match — not
-an error.
-
-### Profile pictures with `include_pictures`
-
-Set `include_pictures: true` and each contact carries a `picture_url`. This looks every
-contact on the page up on WhatsApp rather than reading the local store, so the page is capped
-at **10** and can take up to half a minute — leave it off for a fast listing. An empty
-`picture_url` means the contact has no picture visible to this account, not that the lookup
-failed.
 
 ### Things worth knowing
 
@@ -723,7 +660,7 @@ def verify(secret: str, header: str, body: bytes, tolerance: int = 300) -> bool:
 Answer `2xx` to acknowledge. One attempt is bounded at 10 seconds; a failure is retried with
 exponential backoff up to 8 attempts, and answering `410 Gone` stops delivery of that message
 permanently — it is the endpoint saying it is never coming back. Recent attempts and their
-outcomes are visible in [Console → Webhooks](https://console.whatsmcp.com/webhooks).
+outcomes are visible in [Console → Webhooks](https://app.whatsmcp.com/console/webhooks).
 
 ---
 
@@ -772,91 +709,6 @@ delete.
 
 ---
 
-## Calling over SIP
-
-*Beta.* WhatsMCP bridges **WhatsApp voice calls to SIP in both directions**. A WhatsApp call
-to your linked number rings a SIP phone or your PBX as an ordinary `INVITE`; an extension
-that dials a WhatsApp number in E.164 reaches that person on WhatsApp, and the call shows
-**your number** as the caller. This is not the Meta Business Calling API — no business
-verification and no per-minute billing.
-
-It is set up per number in [Console → SIP](https://console.whatsmcp.com/sip), and there
-are two ways to connect.
-
-### A hosted SIP line — no PBX needed
-
-We run the phone system: the number gets a SIP account on our server and you register any
-SIP phone, softphone or browser to it. The console shows the server, username and password
-(with **Show**, **Copy** and **New password**), and whether your phone and the WhatsApp
-bridge are each registered right now.
-
-Pick the **phone type** for the line — the two cannot share one endpoint:
-
-| Phone type | For | Connect with | Media |
-|---|---|---|---|
-| **SIP phone** | Desk phones, softphones, PBXes | The SIP server over **TLS on port 5061** — plain UDP 5060 only for a phone that cannot do TLS | SRTP (SDES) — turn it on in your phone. Plain RTP if the phone does not offer it |
-| **Browser (WebRTC)** | The dialer built into the console, or your own WebRTC client | The WebSocket URL the console shows (`wss`, port 8089) | DTLS-SRTP, which the browser does by itself |
-
-With **Browser** selected the SIP page carries a **dialer**: sign the browser in to the line,
-dial a WhatsApp number or wait for one to call, and talk through the microphone — no
-hardware at all.
-
-A hosted line holds **one registration** and **one call at a time**. A second device that
-signs in to the same line takes the registration from the first, so run one phone per line.
-**Connection history** on the line's page shows when your phone and the bridge registered,
-and when either one dropped.
-
-### Your own PBX or CRM phone system
-
-The bridge **registers outbound** to your registrar as an ordinary SIP extension, so there is
-no inbound firewall rule to open for signalling. You give it:
-
-| Field | |
-|---|---|
-| **Registrar** | `host` or `host:port` — the port defaults to 5060 over UDP, 5061 over TLS |
-| **Transport** | **UDP** (what most PBXes accept out of the box) or **TLS** for encrypted signalling — your PBX must then present a publicly-issued certificate for that host. Call audio to your PBX is plain RTP for now |
-| **Username / password** | The extension or trunk account on your PBX. The password is stored encrypted and never shown again |
-| **Extension to ring** | Where incoming WhatsApp calls go — `101` by default, or `caller` / `9:caller` to pass the caller's number into your dialplan |
-
-The credentials are **checked against your registrar before they are saved**, and **Test
-connection** dials it again on demand and tells you what answered. Extensions call out by
-dialling the WhatsApp number in E.164 **without the leading `+`**.
-
-### Codecs
-
-WhatsApp chooses its own codec per call — **Opus**, or **MLow**, Meta's low-bitrate codec,
-on a constrained network — and may switch mid-call. The bridge decodes it and re-encodes for
-your side, so your PBX never has to know MLow exists:
-
-| Your side | |
-|---|---|
-| **G.722** | Offered first — wideband (16 kHz), the same bandwidth WhatsApp carries |
-| **G.711 µ-law (PCMU)** | The fallback every SIP phone and PBX speaks — narrowband (8 kHz) |
-| **G.711 A-law (PCMA)** | Accepted when your side prefers it |
-
-Allow `g722` on your trunk and calls stay wideband end to end; a phone that only speaks G.711
-still works, at landline quality.
-
-### Voice plans
-
-SIP calling is a **voice plan**, billed per line and separate from your messaging plan. It
-decides which directions a number may use — **incoming only**, or **incoming and
-outgoing** — and the SIP page states what your plan allows. A call in a direction the plan
-does not include is declined rather than half-connected. Prices are flat per line per month,
-with no per-minute charges: see [whatsmcp.com/sip](https://whatsmcp.com/sip#voice-plans).
-
-Every call, SIP or not, lands in the number's call history — direction, peer, whether it was
-answered, duration, end reason and codec — in the console, and through the `wa_list_calls`
-tool.
-
-> **Hear it first.** The [SIP page](https://whatsmcp.com/sip) has a live demo number:
-> message it on WhatsApp and it calls you back.
-
-Need a dedicated number that lives only on the trunk (no handset), or many lines? [Talk to
-us](https://whatsmcp.com/contact?inquiry=sip-trunk).
-
----
-
 ## Plans and limits
 
 Every workspace starts on the **free plan**, which is enough to link a number and drive it
@@ -869,10 +721,6 @@ from an agent. Paid plans raise the caps and add capability:
 | **History** | How long stored message bodies are kept before they are purged — `wa_list_messages` reads back exactly as far as that window |
 | **Webhooks** | Inbound delivery — a paid capability, and the gate on the four `wa_*_webhook` tools |
 | **Egress** | Routing an account's bridge through your own WireGuard tunnel or SOCKS5 proxy |
-| **Attachments** | Sending images, documents and voice notes — a paid capability |
-| **Voice** | A separate per-line voice plan puts a number's calls on SIP — see [Calling over SIP](#calling-over-sip) |
-| **AI voice agents** | Letting an agent place and answer WhatsApp calls, with transcript and recording |
-| **Request volume** | How many MCP and REST calls you may make per day, week and month, beyond the per-send message caps |
 
 A capability your plan does not include does not appear as a failing tool — the tool is
 **absent from `tools/list` entirely**, so a model never proposes a call that was always going
@@ -880,7 +728,7 @@ to fail.
 
 Ask the service rather than this page for the numbers: **`wa_get_plan`** returns your plan,
 its limits and your usage so far, and [Console →
-Usage](https://console.whatsmcp.com/usage) shows the same counters.
+Usage](https://app.whatsmcp.com/console/usage) shows the same counters.
 
 ---
 
@@ -924,7 +772,7 @@ address.
 - **A foreign id reads as "no such account"**, not "forbidden" — probing reveals nothing.
 - **Keys are stored hashed**, shown once at creation, and revocable individually.
 - **OAuth grants are revocable per client** from
-  [Console → Connections](https://console.whatsmcp.com/connections). Authorization codes
+  [Console → Connections](https://app.whatsmcp.com/console/connections). Authorization codes
   are single-use and refresh tokens rotate; replaying a retired one revokes the grant rather
   than issuing another.
 - **Webhook bodies are signed** with HMAC-SHA256 over a timestamped payload.
@@ -953,13 +801,14 @@ by Meta or WhatsApp.
 |---|---|
 | Product site | <https://whatsmcp.com> |
 | Documentation | <https://whatsmcp.com/docs/mcp> |
-| Create an account | <https://console.whatsmcp.com/register> |
-| Sign in | <https://console.whatsmcp.com/login> |
-| Console | <https://console.whatsmcp.com> |
-| Help (your workspace's own connection details) | <https://console.whatsmcp.com/help> |
+| Create an account | <https://app.whatsmcp.com/console/register> |
+| Sign in | <https://app.whatsmcp.com/console/login> |
+| Console | <https://app.whatsmcp.com/console> |
+| Help (your workspace's own connection details) | <https://app.whatsmcp.com/console/help> |
 | MCP endpoint | `https://api.whatsmcp.com/mcp` |
+| Connect your AI client — Claude, ChatGPT, Codex, Cursor, Grok, Manus | <https://whatsmcp.com/connect> |
+| Integrations — Pipedrive & CRM | <https://whatsmcp.com/integrations> |
 | SIP ↔ WhatsApp voice bridge | <https://whatsmcp.com/sip> |
-| SIP console | <https://console.whatsmcp.com/sip> |
 | Engineering blog | <https://whatsmcp.com/blog> |
 | Model Context Protocol | <https://modelcontextprotocol.io> |
 | Organisation on GitHub | <https://github.com/whatsmcp> |
@@ -967,8 +816,7 @@ by Meta or WhatsApp.
 | Terms of Service | <https://whatsmcp.com/terms> |
 | Contact / support | <https://whatsmcp.com/contact> |
 
-Questions, a number that needs group messaging switched on, a SIP trunk to size, or a plan
-that does not fit —
+Questions, a number that needs group messaging switched on, or a plan that does not fit —
 [open an issue](https://github.com/whatsmcp/mcp/issues), use the contact link above, or write
 to us from the console.
 
