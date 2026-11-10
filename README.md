@@ -42,10 +42,11 @@ There is nothing to install and nothing to run locally — it is a **remote MCP 
 Streamable HTTP**. Your client talks to `https://api.whatsmcp.com/mcp` and signs in with
 OAuth, or presents an API key.
 
-> **Not the WhatsApp Business API.** No templates, no 24-hour session window, no message
-> approval, no per-conversation billing. You link a normal WhatsApp account by scanning a
-> QR code from the phone — exactly like WhatsApp Web — and your agent uses it as a linked
-> device.
+> **The simple path is not the WhatsApp Business API.** You link a normal WhatsApp account by
+> scanning a QR code from the phone — exactly like WhatsApp Web — and your agent uses it as a
+> linked device: no templates, no 24-hour session window, no message approval, no
+> per-conversation billing. A **WhatsApp Business (Cloud API)** number can be linked too, when
+> you do want Meta-reviewed templates — see **Templates**, below.
 
 ---
 
@@ -106,7 +107,7 @@ Sign-up is self-serve and free — no card, no sales call.
 | **Product site** | <https://whatsmcp.com> |
 
 You give a name and an email address. We send a confirmation link; opening it is where you
-choose a password. Confirming creates your **workspace** (tenant) on the free plan and drops
+choose a password. Confirming creates your **workspace** on the free plan and drops
 you into a short setup wizard that walks the three steps that turn a bare account into a
 working integration: **link a number**, **mint a key**, and — optionally — **point a
 webhook** at your endpoint. It is derived from what you have actually done rather than a
@@ -295,6 +296,42 @@ export WHATSMCP_API_KEY=wamcp_live_…
 Codex sends that as `Authorization: Bearer …`. If you would rather set headers yourself, use
 `http_headers` for static values and `env_http_headers` to pull them from the environment.
 
+### Cursor
+
+Add it under **Settings → Tools & Integrations → New MCP Server**, which opens your
+`mcp.json` — `~/.cursor/mcp.json` for every project, or a repo's `.cursor/mcp.json` to share
+one with your team. The OAuth default needs nothing but the URL:
+
+```json
+{
+  "mcpServers": {
+    "wamcp": {
+      "url": "https://api.whatsmcp.com/mcp"
+    }
+  }
+}
+```
+
+Reload Cursor; a browser tab opens for you to sign in, and `wamcp` then shows green with its
+tools under **Tools & Integrations**. Native OAuth for remote servers needs **Cursor 1.0 or
+newer** — if an older build will not pick the server up, add `"type": "http"` next to the
+`url`.
+
+To use a key instead, add a header to the same entry — no sign-in step:
+
+```json
+{
+  "mcpServers": {
+    "wamcp": {
+      "url": "https://api.whatsmcp.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
 ### Every other client
 
 Clients differ in where they keep configuration, but they all need the same thing: the
@@ -316,7 +353,7 @@ but the endpoint URL:
 | | |
 |---|---|
 | [`/.well-known/oauth-protected-resource`](https://api.whatsmcp.com/.well-known/oauth-protected-resource) | RFC 9728 — names the resource and points at its authorization server |
-| [`/.well-known/oauth-authorization-server`](https://app.whatsmcp.com/.well-known/oauth-authorization-server) | RFC 8414 — the endpoints, grants and scopes below |
+| [`/.well-known/oauth-authorization-server`](https://api.whatsmcp.com/.well-known/oauth-authorization-server) | RFC 8414 — the endpoints, grants and scopes below |
 
 A client registers itself either by **Dynamic Client Registration** (RFC 7591, at
 `/oauth/register`) or by publishing a **Client ID Metadata Document** whose URL is its client
@@ -370,7 +407,7 @@ what lets an OAuth-capable client start the flow on its own.
 
 ## Tools
 
-36 tools. Which ones appear in `tools/list` depends on your plan — a tool your plan does not
+46 tools. Which ones appear in `tools/list` depends on your plan — a tool your plan does not
 include is **absent**, not present-and-refusing. [Console →
 Help](https://console.whatsmcp.com/help) lists the set *your* workspace gets, marked
 against what your plan includes.
@@ -398,6 +435,7 @@ account is usable only while its `state` is `connected`.
 | `wa_get_chat` | Recent messages for one account, no cursor — a one-off catch-up |
 | `wa_get_message` | Fetches one stored message by its WhatsApp id or cursor — the one a webhook just announced, say |
 | `wa_get_media` | Downloads a received attachment by `message_id` (base64 + mime) |
+| `wa_load_history` | Asks the phone for older messages in a chat, before the oldest stored here, and saves them — they return in `wa_list_messages` only with `include_history: true` |
 
 ### Message operations
 
@@ -465,6 +503,20 @@ it, rather than silently doing nothing.
 |---|---|
 | `wa_list_calls` | Call history, oldest first, paged — direction, peer, `answered`, `seconds`, `reason`, `codec` |
 
+### AI voice agents *(voice plans)*
+
+An AI voice agent places and answers WhatsApp calls on one of your numbers. It dials from a
+**preset** — a voice agent bound to a number, with default variables — runs the call on its
+own, and leaves a summary, transcript, collected data and a recording.
+
+| Tool | Does |
+|---|---|
+| `wa_ai_list_presets` | Your presets — each pairs an agent with one of your numbers and lists the variables its prompt expects |
+| `wa_ai_call_start` | Has a preset's agent call a number; pass per-call `variables`. Returns a `call_ref`, then the call rings and runs on its own |
+| `wa_ai_call_get` | A call's status, and once it ends the summary, whether the agent judged it a success, the data it collected, the transcript and a one-hour recording link |
+| `wa_ai_call_hangup` | Ends a live call — one you started, or an inbound one an agent answered |
+| `wa_ai_list_calls` | The workspace's AI calls, newest first — outbound, and inbound calls a preset answered |
+
 ### Webhooks *(paid plans)*
 
 | Tool | Does |
@@ -477,6 +529,24 @@ it, rather than silently doing nothing.
 Reach for `wa_enable_webhook` rather than deleting and recreating when you only want
 deliveries to stop for a while: deleting issues a new secret, and everything verifying the
 old one breaks.
+
+### Templates *(Business numbers)*
+
+A **WhatsApp Business (Cloud API)** number — the other kind of number WhatsMCP can connect —
+sends Meta-reviewed message templates, which is how you open a conversation or reach someone
+outside the 24-hour window. These do not apply to a personal linked-device number.
+
+| Tool | Does |
+|---|---|
+| `wa_create_template` | Submits a template for Meta's review — `MARKETING` or `UTILITY`, with numbered `{{1}}` body variables; sendable with `wa_send_message` once `wa_list_templates` shows it `APPROVED` |
+| `wa_list_templates` | A Business number's templates, each with its review status — `APPROVED`, `PENDING` or `REJECTED` (with Meta's reason) |
+| `wa_delete_template` | Removes a template — one language, or every language of the name |
+
+### Feedback
+
+| Tool | Does |
+|---|---|
+| `wa_report` | Sends a bug report, feature request or feedback about WhatsMCP to the team, tagged with your workspace and reply address — not a way to message a WhatsApp contact |
 
 ---
 
@@ -799,7 +869,10 @@ from an agent. Paid plans raise the caps and add capability:
 | **History** | How long stored message bodies are kept before they are purged — `wa_list_messages` reads back exactly as far as that window |
 | **Webhooks** | Inbound delivery — a paid capability, and the gate on the four `wa_*_webhook` tools |
 | **Egress** | Routing an account's bridge through your own WireGuard tunnel or SOCKS5 proxy |
+| **Attachments** | Sending images, documents and voice notes — a paid capability |
 | **Voice** | A separate per-line voice plan puts a number's calls on SIP — see [Calling over SIP](#calling-over-sip) |
+| **AI voice agents** | Letting an agent place and answer WhatsApp calls, with transcript and recording |
+| **Request volume** | How many MCP and REST calls you may make per day, week and month, beyond the per-send message caps |
 
 A capability your plan does not include does not appear as a failing tool — the tool is
 **absent from `tools/list` entirely**, so a model never proposes a call that was always going
