@@ -15,7 +15,7 @@
   <a href="https://whatsmcp.com"><img alt="Website" src="https://img.shields.io/badge/website-whatsmcp.com-22C55E?style=flat-square"></a>
   <a href="https://whatsmcp.com/docs/mcp"><img alt="Documentation" src="https://img.shields.io/badge/docs-%2Fdocs%2Fmcp-0A1120?style=flat-square"></a>
   <a href="https://modelcontextprotocol.io"><img alt="MCP specification" src="https://img.shields.io/badge/MCP-2026--07--28-6E56CF?style=flat-square"></a>
-  <img alt="Tools" src="https://img.shields.io/badge/tools-36-0A1120?style=flat-square">
+  <img alt="Tools" src="https://img.shields.io/badge/tools-48-0A1120?style=flat-square">
   <a href="#connect-your-client"><img alt="Authentication" src="https://img.shields.io/badge/auth-OAuth%202.1%20%C2%B7%20API%20key-F5A623?style=flat-square"></a>
   <img alt="Status" src="https://img.shields.io/badge/status-live-22C55E?style=flat-square">
 </p>
@@ -407,7 +407,7 @@ what lets an OAuth-capable client start the flow on its own.
 
 ## Tools
 
-46 tools. Which ones appear in `tools/list` depends on your plan — a tool your plan does not
+48 tools. Which ones appear in `tools/list` depends on your plan — a tool your plan does not
 include is **absent**, not present-and-refusing. [Console →
 Help](https://console.whatsmcp.com/help) lists the set *your* workspace gets, marked
 against what your plan includes.
@@ -432,8 +432,10 @@ account is usable only while its `state` is `connected`.
 |---|---|
 | `wa_send_message` | Sends text, an image, a document or audio from one of your numbers |
 | `wa_list_messages` | Reads messages across accounts, oldest first, paged by cursor |
+| `wa_list_chats` | Lists an account's conversations — direct chats, groups and channels — each with its JID, type and archive status; `exclude_archived` leaves archived ones out |
 | `wa_get_chat` | Recent messages for one account, no cursor — a one-off catch-up |
 | `wa_get_message` | Fetches one stored message by its WhatsApp id or cursor — the one a webhook just announced, say |
+| `wa_get_message_context` | Reads a message with the few before and after it in the same conversation, for context |
 | `wa_get_media` | Downloads a received attachment by `message_id` (base64 + mime) |
 | `wa_load_history` | Asks the phone for older messages in a chat, before the oldest stored here, and saves them — they return in `wa_list_messages` only with `include_history: true` |
 
