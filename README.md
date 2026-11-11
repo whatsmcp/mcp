@@ -27,6 +27,7 @@
   <a href="#reading-incoming-messages">Polling</a> ·
   <a href="#webhooks">Webhooks</a> ·
   <a href="#calling-over-sip">SIP</a> ·
+  <a href="#ai-agents">Agents</a> ·
   <a href="#security-model">Security</a>
 </p>
 
@@ -61,6 +62,7 @@ OAuth, or presents an API key.
 - [Webhooks](#webhooks)
 - [Sending](#sending)
 - [Groups and channels](#groups-and-channels)
+- [AI Agents](#ai-agents)
 - [Business numbers (Cloud API)](#business-numbers-cloud-api)
 - [Calling over SIP](#calling-over-sip)
 - [Plans and limits](#plans-and-limits)
@@ -752,6 +754,31 @@ delete.
 
 ---
 
+## AI Agents
+
+Everything above drives WhatsApp from **your own** AI. WhatsMCP can also run a **hosted AI
+agent on the number itself** — it answers incoming messages and calls on your behalf, with no
+client attached. You build one in [Console → Agents](https://app.whatsmcp.com/console/agents).
+
+**Chat agent.** It replies to WhatsApp messages from a **knowledge base** you give it — upload
+files, paste text, or write Q&A — and answers from those rather than inventing; with no
+knowledge it says it does not know instead of guessing. Give it **custom actions** so it can
+*do* things mid-conversation — call your API or a webhook to look up an order, book a slot or
+raise a ticket — and it **hands over to a human** when it should. It runs on **your own LLM
+key**, so the model and its cost stay yours.
+
+**Voice agent — powered by [ElevenLabs](https://elevenlabs.io).** It places and answers
+WhatsApp **calls** in a natural voice. You **connect your ElevenLabs account** with its API key
+and point the line at one of your **ElevenLabs Conversational AI** agents; WhatsMCP bridges the
+WhatsApp call to it, and every call leaves a **summary, transcript, collected data and a
+recording**. You can also drive these from your own client with the `wa_ai_*` tools and presets.
+
+Agents are a **paid capability**: your plan sets how many replies a month, how large a
+knowledge base, and how many custom actions per agent — `wa_get_plan` and [Console →
+Agents](https://app.whatsmcp.com/console/agents) show what yours allows.
+
+---
+
 ## Business numbers (Cloud API)
 
 Most numbers here are **linked devices** — a normal WhatsApp account paired by QR. You can
@@ -783,7 +810,7 @@ that dials a WhatsApp number in E.164 reaches that person on WhatsApp, and the c
 **your number** as the caller. This is not the Meta Business Calling API — no business
 verification and no per-minute billing.
 
-It is set up per number in [Console → SIP](https://console.whatsmcp.com/sip), and there
+It is set up per number in [Console → SIP](https://app.whatsmcp.com/console/sip), and there
 are two ways to connect.
 
 ### A hosted SIP line — no PBX needed
