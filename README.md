@@ -47,6 +47,10 @@ OAuth, or presents an API key.
 > per-conversation billing. You can also connect a **WhatsApp Business (Cloud API)** number
 > when you want Meta-reviewed templates — see [Business numbers](#business-numbers-cloud-api).
 
+<p align="center">
+  <img src="assets/architecture.svg" alt="WhatsMCP architecture — your AI client connects over OAuth or an API key to one HTTPS MCP endpoint (api.whatsmcp.com/mcp), which drives your WhatsApp number, bridges calls to SIP, and runs hosted AI agents." width="820">
+</p>
+
 ---
 
 ## Contents

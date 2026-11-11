@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" role="img" aria-label="WhatsMCP architecture: your AI client connects over OAuth or an API key to one HTTPS MCP endpoint (api.whatsmcp.com/mcp), which drives your WhatsApp number, bridges calls to SIP, and runs hosted AI agents.">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8B949E"/>
+    </marker>
+  </defs>
+  <g font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+
+    <text x="30" y="30" font-size="12.5" font-weight="600" letter-spacing="1.2" fill="#8B949E">HOW WHATSMCP CONNECTS</text>
+
+    <!-- connectors -->
+    <line x1="241" y1="110" x2="342" y2="110" stroke="#8B949E" stroke-width="2" marker-end="url(#ah)"/>
+    <line x1="596" y1="110" x2="697" y2="110" stroke="#8B949E" stroke-width="2" marker-end="url(#ah)"/>
+    <path d="M450,161 C450,205 375,206 375,247" fill="none" stroke="#8B949E" stroke-width="2" marker-end="url(#ah)"/>
+    <path d="M490,161 C490,205 700,206 700,247" fill="none" stroke="#8B949E" stroke-width="2" marker-end="url(#ah)"/>
+
+    <text x="291" y="100" text-anchor="middle" font-size="11" fill="#8B949E">OAuth &#183; API key</text>
+    <text x="646" y="100" text-anchor="middle" font-size="11" fill="#8B949E">linked &#183; Business</text>
+
+    <!-- Your AI client -->
+    <rect x="30" y="68" width="211" height="84" rx="12" fill="#6E56CF"/>
+    <text x="135" y="103" text-anchor="middle" font-size="15.5" font-weight="700" fill="#ffffff">Your AI client</text>
+    <text x="135" y="125" text-anchor="middle" font-size="11" fill="#E7E3FB">Claude &#183; Cursor &#183; ChatGPT &#183; Codex</text>
+
+    <!-- Endpoint (hero) -->
+    <rect x="342" y="60" width="254" height="100" rx="12" fill="#2563EB"/>
+    <text x="469" y="95" text-anchor="middle" font-size="15.5" font-weight="700" fill="#ffffff">api.whatsmcp.com/mcp</text>
+    <text x="469" y="117" text-anchor="middle" font-size="11" fill="#DBEAFE">one HTTPS endpoint &#183; Streamable HTTP</text>
+    <text x="469" y="134" text-anchor="middle" font-size="11" fill="#DBEAFE">48 tools &#183; OAuth 2.1</text>
+
+    <!-- WhatsApp -->
+    <rect x="697" y="68" width="173" height="84" rx="12" fill="#22C55E"/>
+    <text x="783" y="103" text-anchor="middle" font-size="15.5" font-weight="700" fill="#052E16">WhatsApp</text>
+    <text x="783" y="125" text-anchor="middle" font-size="11" fill="#064E26">your linked number</text>
+
+    <!-- SIP -->
+    <rect x="250" y="247" width="250" height="82" rx="12" fill="#0EA5E9"/>
+    <text x="375" y="281" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">SIP bridge</text>
+    <text x="375" y="303" text-anchor="middle" font-size="11" fill="#E0F2FE">WhatsApp calls &#8596; SIP phone / PBX</text>
+
+    <!-- AI Agents -->
+    <rect x="540" y="247" width="320" height="82" rx="12" fill="#F5A623"/>
+    <text x="700" y="281" text-anchor="middle" font-size="15" font-weight="700" fill="#3A2600">AI Agents</text>
+    <text x="700" y="303" text-anchor="middle" font-size="11" fill="#4A3100">hosted chat (knowledge base) + voice (ElevenLabs)</text>
+
+  </g>
+</svg>
