@@ -15,7 +15,7 @@
   <a href="https://whatsmcp.com"><img alt="Website" src="https://img.shields.io/badge/website-whatsmcp.com-22C55E?style=flat-square"></a>
   <a href="https://whatsmcp.com/docs/mcp"><img alt="Documentation" src="https://img.shields.io/badge/docs-%2Fdocs%2Fmcp-0A1120?style=flat-square"></a>
   <a href="https://modelcontextprotocol.io"><img alt="MCP specification" src="https://img.shields.io/badge/MCP-2026--07--28-6E56CF?style=flat-square"></a>
-  <img alt="Tools" src="https://img.shields.io/badge/tools-46-0A1120?style=flat-square">
+  <img alt="Tools" src="https://img.shields.io/badge/tools-48-0A1120?style=flat-square">
   <a href="#connect-your-client"><img alt="Authentication" src="https://img.shields.io/badge/auth-OAuth%202.1%20%C2%B7%20API%20key-F5A623?style=flat-square"></a>
   <img alt="Status" src="https://img.shields.io/badge/status-live-22C55E?style=flat-square">
 </p>
@@ -291,6 +291,42 @@ export WHATSMCP_API_KEY=wamcp_live_…
 Codex sends that as `Authorization: Bearer …`. If you would rather set headers yourself, use
 `http_headers` for static values and `env_http_headers` to pull them from the environment.
 
+### Cursor
+
+Add it under **Settings → Tools & Integrations → New MCP Server**, which opens your
+`mcp.json` — `~/.cursor/mcp.json` for every project, or a repo's `.cursor/mcp.json` to share
+one with your team. The OAuth default needs nothing but the URL:
+
+```json
+{
+  "mcpServers": {
+    "wamcp": {
+      "url": "https://api.whatsmcp.com/mcp"
+    }
+  }
+}
+```
+
+Reload Cursor; a browser tab opens for you to sign in, and `wamcp` then shows green with its
+tools under **Tools & Integrations**. Native OAuth for remote servers needs **Cursor 1.0 or
+newer** — if an older build will not pick the server up, add `"type": "http"` next to the
+`url`.
+
+To use a key instead, add a header to the same entry — no sign-in step:
+
+```json
+{
+  "mcpServers": {
+    "wamcp": {
+      "url": "https://api.whatsmcp.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
 ### Every other client
 
 Clients differ in where they keep configuration, but they all need the same thing: the
@@ -366,7 +402,7 @@ what lets an OAuth-capable client start the flow on its own.
 
 ## Tools
 
-46 tools. Which ones appear in `tools/list` depends on your plan and the kind of number — a
+48 tools. Which ones appear in `tools/list` depends on your plan and the kind of number — a
 tool your plan does not include, or that only applies to a Business (Cloud API) number, is
 **absent**, not present-and-refusing. [Console →
 Help](https://app.whatsmcp.com/console/help) lists the set *your* workspace gets, marked
@@ -391,8 +427,10 @@ account is usable only while its `state` is `connected`.
 |---|---|
 | `wa_send_message` | Sends text, an image, a document or audio from one of your numbers; on a Business number, also an approved template |
 | `wa_list_messages` | Reads messages across accounts, oldest first, paged by cursor |
+| `wa_list_chats` | Lists an account's conversations — direct chats, groups and channels — each with its JID, type and archive status; `exclude_archived` leaves archived ones out |
 | `wa_get_chat` | Recent messages for one account, no cursor — a one-off catch-up |
 | `wa_get_message` | Fetches **one** stored message by `message_id` or cursor — the one a webhook told you about, without paging |
+| `wa_get_message_context` | Reads a message with the few before and after it in the same conversation, for context |
 | `wa_get_media` | Downloads a received attachment by `message_id` (base64 + mime) |
 | `wa_load_history` | Asks the account's phone for older messages in one chat and stores them; read them back with `wa_get_chat` |
 
