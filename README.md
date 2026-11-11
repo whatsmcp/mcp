@@ -77,7 +77,7 @@ OAuth, or presents an API key.
 ## Quick start
 
 ```
-1. Create a workspace     →  https://app.whatsmcp.com/console/register
+1. Create a workspace     →  https://console.whatsmcp.com/register
 2. Link a WhatsApp number →  Console → Pair device (scan the QR with your phone)
 3. Give your client       →  https://api.whatsmcp.com/mcp
                              …and sign in when it asks. No key to paste.
@@ -104,8 +104,8 @@ Sign-up is self-serve and free — no card, no sales call.
 
 | | |
 |---|---|
-| **Create an account** | <https://app.whatsmcp.com/console/register> |
-| **Sign in** | <https://app.whatsmcp.com/console/login> |
+| **Create an account** | <https://console.whatsmcp.com/register> |
+| **Sign in** | <https://console.whatsmcp.com/login> |
 | **Product site** | <https://whatsmcp.com> |
 
 You give a name and an email address. We send a confirmation link; opening it is where you
@@ -120,13 +120,13 @@ Everything lives in the console:
 
 | Console page | What it is for |
 |---|---|
-| [Fleet](https://app.whatsmcp.com/console/fleet) | Every linked number and whether it is connected |
-| [Pair device](https://app.whatsmcp.com/console/pair) | Link a new WhatsApp number by QR |
-| [API keys](https://app.whatsmcp.com/console/keys) | Mint and revoke keys; copy-paste connection examples |
-| [Connections](https://app.whatsmcp.com/console/connections) | Clients you signed in with OAuth, and a revoke button per client |
-| [Webhooks](https://app.whatsmcp.com/console/webhooks) | Inbound delivery endpoint and its recent attempts |
-| [Usage](https://app.whatsmcp.com/console/usage) | Messages sent against your plan's caps |
-| [Help](https://app.whatsmcp.com/console/help) | The connection details for *your* workspace, and which tools your plan includes |
+| [Fleet](https://console.whatsmcp.com/fleet) | Every linked number and whether it is connected |
+| [Pair device](https://console.whatsmcp.com/pair) | Link a new WhatsApp number by QR |
+| [API keys](https://console.whatsmcp.com/keys) | Mint and revoke keys; copy-paste connection examples |
+| [Connections](https://console.whatsmcp.com/connections) | Clients you signed in with OAuth, and a revoke button per client |
+| [Webhooks](https://console.whatsmcp.com/webhooks) | Inbound delivery endpoint and its recent attempts |
+| [Usage](https://console.whatsmcp.com/usage) | Messages sent against your plan's caps |
+| [Help](https://console.whatsmcp.com/help) | The connection details for *your* workspace, and which tools your plan includes |
 
 Per-number pages (Messages, **Contacts**, Calls) hang off each account in the same console.
 
@@ -137,7 +137,7 @@ Per-number pages (Messages, **Contacts**, Calls) hang off each account in the sa
 WhatsMCP connects as a **linked device**, the same mechanism as WhatsApp Web. Your phone
 stays the primary device and can stay in your pocket afterwards.
 
-**From the console:** open [Pair device](https://app.whatsmcp.com/console/pair), then on the
+**From the console:** open [Pair device](https://console.whatsmcp.com/pair), then on the
 handset go to **WhatsApp → Settings → Linked devices → Link a device** and scan the code.
 
 ![Pairing a device: the console shows a QR code and a four-stage progress indicator — code, scanned, syncing, ready](assets/pair-device.png)
@@ -171,7 +171,7 @@ Once `state` is `paired` the number appears in `wa_list_accounts` and is ready t
 client](#connect-your-client). Keys are for `curl`, for CI, and for clients that cannot do
 OAuth.
 
-[Console → API keys](https://app.whatsmcp.com/console/keys) → **Create key**.
+[Console → API keys](https://console.whatsmcp.com/keys) → **Create key**.
 
 Keys look like `wamcp_live_XXXXXXXXXXXX_…` and are **shown exactly once** — we store only a
 hash, so a lost key is replaced, never recovered. Mint one key per client or per environment
@@ -198,7 +198,7 @@ There are two ways to prove who you are against it.
 server's own metadata, registers itself, and sends you to the console to approve it. Nothing
 is pasted anywhere: no key is created, none is stored in a config file, and you can revoke
 one client without touching the others from
-[Console → Connections](https://app.whatsmcp.com/console/connections).
+[Console → Connections](https://console.whatsmcp.com/connections).
 
 **An API key** — `Authorization: Bearer <your key>`, or `x-api-key: <your key>` for clients
 that reserve `Authorization` for a token they manage themselves. Use it for `curl`, for CI,
@@ -382,7 +382,7 @@ Seven scopes are advertised and recorded on each grant:
 > a description of what the connection is for, not as a sandbox.
 
 Grants are listed and revocable at
-[Console → Connections](https://app.whatsmcp.com/console/connections). Revoking one there
+[Console → Connections](https://console.whatsmcp.com/connections). Revoking one there
 disconnects that client and nothing else.
 
 ### Check it by hand
@@ -412,7 +412,7 @@ what lets an OAuth-capable client start the flow on its own.
 48 tools. Which ones appear in `tools/list` depends on your plan and the kind of number — a
 tool your plan does not include, or that only applies to a Business (Cloud API) number, is
 **absent**, not present-and-refusing. [Console →
-Help](https://app.whatsmcp.com/console/help) lists the set *your* workspace gets, marked
+Help](https://console.whatsmcp.com/help) lists the set *your* workspace gets, marked
 against what your plan includes.
 
 **Start with `wa_list_accounts`.** Every other tool takes an `account_id` from it, and an
@@ -705,7 +705,7 @@ def verify(secret: str, header: str, body: bytes, tolerance: int = 300) -> bool:
 Answer `2xx` to acknowledge. One attempt is bounded at 10 seconds; a failure is retried with
 exponential backoff up to 8 attempts, and answering `410 Gone` stops delivery of that message
 permanently — it is the endpoint saying it is never coming back. Recent attempts and their
-outcomes are visible in [Console → Webhooks](https://app.whatsmcp.com/console/webhooks).
+outcomes are visible in [Console → Webhooks](https://console.whatsmcp.com/webhooks).
 
 ---
 
@@ -758,7 +758,7 @@ delete.
 
 Everything above drives WhatsApp from **your own** AI. WhatsMCP can also run a **hosted AI
 agent on the number itself** — it answers incoming messages and calls on your behalf, with no
-client attached. You build one in [Console → Agents](https://app.whatsmcp.com/console/agents).
+client attached. You build one in [Console → Agents](https://console.whatsmcp.com/agents).
 
 **Chat agent.** It replies to WhatsApp messages from a **knowledge base** you give it — upload
 files, paste text, or write Q&A — and answers from those rather than inventing; with no
@@ -775,7 +775,7 @@ recording**. You can also drive these from your own client with the `wa_ai_*` to
 
 Agents are a **paid capability**: your plan sets how many replies a month, how large a
 knowledge base, and how many custom actions per agent — `wa_get_plan` and [Console →
-Agents](https://app.whatsmcp.com/console/agents) show what yours allows.
+Agents](https://console.whatsmcp.com/agents) show what yours allows.
 
 ---
 
@@ -810,7 +810,7 @@ that dials a WhatsApp number in E.164 reaches that person on WhatsApp, and the c
 **your number** as the caller. This is not the Meta Business Calling API — no business
 verification and no per-minute billing.
 
-It is set up per number in [Console → SIP](https://app.whatsmcp.com/console/sip), and there
+It is set up per number in [Console → SIP](https://console.whatsmcp.com/sip), and there
 are two ways to connect.
 
 ### A hosted SIP line — no PBX needed
@@ -906,7 +906,7 @@ to fail.
 
 Ask the service rather than this page for the numbers: **`wa_get_plan`** returns your plan,
 its limits and your usage so far, and [Console →
-Usage](https://app.whatsmcp.com/console/usage) shows the same counters.
+Usage](https://console.whatsmcp.com/usage) shows the same counters.
 
 ---
 
@@ -950,7 +950,7 @@ address.
 - **A foreign id reads as "no such account"**, not "forbidden" — probing reveals nothing.
 - **Keys are stored hashed**, shown once at creation, and revocable individually.
 - **OAuth grants are revocable per client** from
-  [Console → Connections](https://app.whatsmcp.com/console/connections). Authorization codes
+  [Console → Connections](https://console.whatsmcp.com/connections). Authorization codes
   are single-use and refresh tokens rotate; replaying a retired one revokes the grant rather
   than issuing another.
 - **Webhook bodies are signed** with HMAC-SHA256 over a timestamped payload.
@@ -989,10 +989,10 @@ by Meta or WhatsApp.
 |---|---|
 | Product site | <https://whatsmcp.com> |
 | Documentation | <https://whatsmcp.com/docs/mcp> |
-| Create an account | <https://app.whatsmcp.com/console/register> |
-| Sign in | <https://app.whatsmcp.com/console/login> |
-| Console | <https://app.whatsmcp.com/console> |
-| Help (your workspace's own connection details) | <https://app.whatsmcp.com/console/help> |
+| Create an account | <https://console.whatsmcp.com/register> |
+| Sign in | <https://console.whatsmcp.com/login> |
+| Console | <https://console.whatsmcp.com> |
+| Help (your workspace's own connection details) | <https://console.whatsmcp.com/help> |
 | MCP endpoint | `https://api.whatsmcp.com/mcp` |
 | Connect your AI client — Claude, ChatGPT, Codex, Cursor, Grok, Manus | <https://whatsmcp.com/connect> |
 | Integrations — Pipedrive & CRM | <https://whatsmcp.com/integrations> |
