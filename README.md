@@ -27,7 +27,7 @@
   <a href="#reading-incoming-messages">Polling</a> ·
   <a href="#webhooks">Webhooks</a> ·
   <a href="#calling-over-sip">SIP</a> ·
-  <a href="#ai-agents">Agents</a> ·
+  <a href="#autonomous-ai-agents">Agents</a> ·
   <a href="#security-model">Security</a>
 </p>
 
@@ -66,7 +66,7 @@ OAuth, or presents an API key.
 - [Webhooks](#webhooks)
 - [Sending](#sending)
 - [Groups and channels](#groups-and-channels)
-- [AI Agents](#ai-agents)
+- [Autonomous AI Agents](#autonomous-ai-agents)
 - [Business numbers (Cloud API)](#business-numbers-cloud-api)
 - [Calling over SIP](#calling-over-sip)
 - [Plans and limits](#plans-and-limits)
@@ -758,27 +758,40 @@ delete.
 
 ---
 
-## AI Agents
+## Autonomous AI Agents
 
-Everything above drives WhatsApp from **your own** AI. WhatsMCP can also run a **hosted AI
-agent on the number itself** — it answers incoming messages and calls on your behalf, with no
-client attached. You build one in [Console → Agents](https://console.whatsmcp.com/agents).
+Everything above drives WhatsApp from **your own** AI. WhatsMCP can also run an **autonomous AI
+agent on the number itself** — it works your WhatsApp **around the clock, 24/7**, answering
+messages and calls on your behalf, with no client attached and nothing left running on your
+side. You build one in [Console → Agents](https://console.whatsmcp.com/agents).
 
 **Chat agent.** It replies to WhatsApp messages from a **knowledge base** you give it — upload
 files, paste text, or write Q&A — and answers from those rather than inventing; with no
-knowledge it says it does not know instead of guessing. Give it **custom actions** so it can
-*do* things mid-conversation — call your API or a webhook to look up an order, book a slot or
-raise a ticket — and it **hands over to a human** when it should. It runs on **your own LLM
-key**, so the model and its cost stay yours.
+knowledge it says it does not know instead of guessing. It runs on **your own LLM key**, so the
+model and its cost stay yours, and it **hands over to a human** when it should.
 
-**Voice agent — powered by [ElevenLabs](https://elevenlabs.io).** It places and answers
-WhatsApp **calls** in a natural voice. You **connect your ElevenLabs account** with its API key
-and point the line at one of your **ElevenLabs Conversational AI** agents; WhatsMCP bridges the
-WhatsApp call to it, and every call leaves a **summary, transcript, collected data and a
-recording**. You can also drive these from your own client with the `wa_ai_*` tools and presets.
+**Actions — the agent does things, not just answers.** Give an agent **actions** and it decides
+from the conversation when to use them, then acts on the result. Two kinds:
 
-Agents are a **paid capability**: your plan sets how many replies a month, how large a
-knowledge base, and how many custom actions per agent — `wa_get_plan` and [Console →
+- **Call your API** — an HTTP action you define (name, URL, parameters, credentials); the agent
+  fills in the parameters to look up an order, check availability, book a slot, raise a ticket
+  or update your CRM.
+- **Remote MCP tools** — connect an MCP server and every tool it exposes becomes an action, so
+  the agent reaches the same kind of tools your other AI clients do.
+
+Actions are guard-railed: a **write action runs at most once per turn**, there are per-turn and
+per-chat limits, an action **can't reach a private or internal address**, and when the agent
+**can't tell whether one worked it hands the chat to a person**. Your plan caps how many actions
+an agent may have (**20** by default).
+
+**Voice agent — powered by [ElevenLabs](https://elevenlabs.io).** It places and answers WhatsApp
+**calls** in a natural voice. You **connect your ElevenLabs account** with its API key and point
+the line at one of your **ElevenLabs Conversational AI** agents; WhatsMCP bridges the WhatsApp
+call to it, and every call leaves a **summary, transcript, collected data and a recording**. You
+can also drive these from your own client with the `wa_ai_*` tools and presets.
+
+Agents are a **paid capability**: your plan sets how many replies a month, how large a knowledge
+base, and how many actions per agent — `wa_get_plan` and [Console →
 Agents](https://console.whatsmcp.com/agents) show what yours allows.
 
 ---
