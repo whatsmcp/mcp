@@ -26,6 +26,7 @@
   <a href="#tools">Tools</a> ·
   <a href="#reading-incoming-messages">Polling</a> ·
   <a href="#webhooks">Webhooks</a> ·
+  <a href="#calling-over-sip">SIP</a> ·
   <a href="#security-model">Security</a>
 </p>
 
@@ -39,10 +40,11 @@ There is nothing to install and nothing to run locally — it is a **remote MCP 
 Streamable HTTP**. Your client talks to `https://api.whatsmcp.com/mcp` and signs in with
 OAuth, or presents an API key.
 
-> **Not the WhatsApp Business API.** No templates, no 24-hour session window, no message
-> approval, no per-conversation billing. You link a normal WhatsApp account by scanning a
-> QR code from the phone — exactly like WhatsApp Web — and your agent uses it as a linked
-> device.
+> **The simple path is not the WhatsApp Business API.** You link a normal WhatsApp account by
+> scanning a QR code from the phone — exactly like WhatsApp Web — and your agent uses it as a
+> linked device: no templates, no 24-hour session window, no message approval, no
+> per-conversation billing. You can also connect a **WhatsApp Business (Cloud API)** number
+> when you want Meta-reviewed templates — see [Business numbers](#business-numbers-cloud-api).
 
 ---
 
@@ -59,9 +61,12 @@ OAuth, or presents an API key.
 - [Webhooks](#webhooks)
 - [Sending](#sending)
 - [Groups and channels](#groups-and-channels)
+- [Business numbers (Cloud API)](#business-numbers-cloud-api)
+- [Calling over SIP](#calling-over-sip)
 - [Plans and limits](#plans-and-limits)
 - [Refusals and error handling](#refusals-and-error-handling)
 - [Security model](#security-model)
+- [Telegram (coming soon)](#telegram-coming-soon)
 - [Status and licence](#status-and-licence)
 - [Links](#links)
 
@@ -747,6 +752,114 @@ delete.
 
 ---
 
+## Business numbers (Cloud API)
+
+Most numbers here are **linked devices** — a normal WhatsApp account paired by QR. You can
+also connect a **WhatsApp Business (Cloud API)** number, Meta's official API, and drive it
+through the **same MCP tools and the same endpoint**: listing, sending, reading, webhooks and
+the rest work unchanged.
+
+What a Business number adds:
+
+- **Templates.** Outside the 24-hour customer-service window you message with a Meta-approved
+  **template** rather than free text — create and track them with `wa_create_template`,
+  `wa_list_templates` and `wa_delete_template`, then send one through `wa_send_message`.
+- **No QR, no handset.** A Business number connects with its Cloud API credentials, not by
+  scanning a code, so nothing has to stay online on a phone.
+- **Several devices per number.** A Business line can run more than one login at once (rolling
+  out), so several clients or agents can work the same number in parallel.
+
+A Business number is flagged as such in `wa_list_accounts`, and a tool or argument that only
+applies to one kind of number says so when it refuses. Everything else in this document —
+contacts, groups, calls, webhooks — works the same whichever kind you connect.
+
+---
+
+## Calling over SIP
+
+*Beta.* WhatsMCP bridges **WhatsApp voice calls to SIP in both directions**. A WhatsApp call
+to your linked number rings a SIP phone or your PBX as an ordinary `INVITE`; an extension
+that dials a WhatsApp number in E.164 reaches that person on WhatsApp, and the call shows
+**your number** as the caller. This is not the Meta Business Calling API — no business
+verification and no per-minute billing.
+
+It is set up per number in [Console → SIP](https://console.whatsmcp.com/sip), and there
+are two ways to connect.
+
+### A hosted SIP line — no PBX needed
+
+We run the phone system: the number gets a SIP account on our server and you register any
+SIP phone, softphone or browser to it. The console shows the server, username and password
+(with **Show**, **Copy** and **New password**), and whether your phone and the WhatsApp
+bridge are each registered right now.
+
+Pick the **phone type** for the line — the two cannot share one endpoint:
+
+| Phone type | For | Connect with | Media |
+|---|---|---|---|
+| **SIP phone** | Desk phones, softphones, PBXes | The SIP server over **TLS on port 5061** — plain UDP 5060 only for a phone that cannot do TLS | SRTP (SDES) — turn it on in your phone. Plain RTP if the phone does not offer it |
+| **Browser (WebRTC)** | The dialer built into the console, or your own WebRTC client | The WebSocket URL the console shows (`wss`, port 8089) | DTLS-SRTP, which the browser does by itself |
+
+With **Browser** selected the SIP page carries a **dialer**: sign the browser in to the line,
+dial a WhatsApp number or wait for one to call, and talk through the microphone — no
+hardware at all.
+
+A hosted line holds **one registration** and **one call at a time**. A second device that
+signs in to the same line takes the registration from the first, so run one phone per line.
+**Connection history** on the line's page shows when your phone and the bridge registered,
+and when either one dropped.
+
+### Your own PBX or CRM phone system
+
+The bridge **registers outbound** to your registrar as an ordinary SIP extension, so there is
+no inbound firewall rule to open for signalling. You give it:
+
+| Field | |
+|---|---|
+| **Registrar** | `host` or `host:port` — the port defaults to 5060 over UDP, 5061 over TLS |
+| **Transport** | **UDP** (what most PBXes accept out of the box) or **TLS** for encrypted signalling — your PBX must then present a publicly-issued certificate for that host. Call audio to your PBX is plain RTP for now |
+| **Username / password** | The extension or trunk account on your PBX. The password is stored encrypted and never shown again |
+| **Extension to ring** | Where incoming WhatsApp calls go — `101` by default, or `caller` / `9:caller` to pass the caller's number into your dialplan |
+
+The credentials are **checked against your registrar before they are saved**, and **Test
+connection** dials it again on demand and tells you what answered. Extensions call out by
+dialling the WhatsApp number in E.164 **without the leading `+`**.
+
+### Codecs
+
+WhatsApp chooses its own codec per call — **Opus**, or **MLow**, Meta's low-bitrate codec,
+on a constrained network — and may switch mid-call. The bridge decodes it and re-encodes for
+your side, so your PBX never has to know MLow exists:
+
+| Your side | |
+|---|---|
+| **G.722** | Offered first — wideband (16 kHz), the same bandwidth WhatsApp carries |
+| **G.711 µ-law (PCMU)** | The fallback every SIP phone and PBX speaks — narrowband (8 kHz) |
+| **G.711 A-law (PCMA)** | Accepted when your side prefers it |
+
+Allow `g722` on your trunk and calls stay wideband end to end; a phone that only speaks G.711
+still works, at landline quality.
+
+### Voice plans
+
+SIP calling is a **voice plan**, billed per line and separate from your messaging plan. It
+decides which directions a number may use — **incoming only**, or **incoming and
+outgoing** — and the SIP page states what your plan allows. A call in a direction the plan
+does not include is declined rather than half-connected. Prices are flat per line per month,
+with no per-minute charges: see [whatsmcp.com/sip](https://whatsmcp.com/sip#voice-plans).
+
+Every call, SIP or not, lands in the number's call history — direction, peer, whether it was
+answered, duration, end reason and codec — in the console, and through the `wa_list_calls`
+tool.
+
+> **Hear it first.** The [SIP page](https://whatsmcp.com/sip) has a live demo number:
+> message it on WhatsApp and it calls you back.
+
+Need a dedicated number that lives only on the trunk (no handset), or many lines? [Talk to
+us](https://whatsmcp.com/contact?inquiry=sip-trunk).
+
+---
+
 ## Plans and limits
 
 Every workspace starts on the **free plan**, which is enough to link a number and drive it
@@ -816,6 +929,16 @@ address.
 - **Webhook bodies are signed** with HMAC-SHA256 over a timestamped payload.
 - Your WhatsApp account remains yours: WhatsMCP is a linked device, and you can remove it at
   any time from the handset (**Settings → Linked devices**) or with `wa_unpair_account`.
+
+---
+
+## Telegram (coming soon)
+
+WhatsMCP is WhatsApp today. **Telegram is next** — the same MCP endpoint and the same style of
+tools, with a Telegram account connected much as a WhatsApp one is, so an agent already built
+against WhatsMCP reaches Telegram with little more than a new account linked. Want it early, or
+have a use case to help shape it? [Tell us](https://whatsmcp.com/contact) or watch
+[the repo](https://github.com/whatsmcp/mcp).
 
 ---
 
